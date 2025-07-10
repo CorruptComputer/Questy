@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\NG.Mediator\NG.Mediator.csproj" />
+    <ProjectReference Include="..\..\NG.Mediator\NG.Mediator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

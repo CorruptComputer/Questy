@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\NG.Mediator\NG.Mediator.csproj" />
+    <ProjectReference Include="..\..\NG.Mediator\NG.Mediator.csproj" />
     <ProjectReference Include="..\NG.Mediator.Examples\NG.Mediator.Examples.csproj" />
   </ItemGroup>
 
