@@ -1,15 +1,14 @@
-name: Release
+name: Build & Tests
 
 on:
   push:
-    tags:
-    - '*.*.*'
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 jobs:
   build:
-    strategy:
-      matrix: 
-        os: [ubuntu-latest]
-      fail-fast: false
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -31,12 +30,6 @@ jobs:
 #      env:
 #        NUGET_URL: https://www.myget.org/F/NG.Mediator-ci/api/v3/index.json
 #        NUGET_API_KEY: ${{ secrets.MYGET_NG.Mediator_CI_API_KEY }}
-#      run: ./Push.ps1
-#      shell: pwsh
-#    - name: Push to NuGet
-#      env:
-#        NUGET_URL: https://api.nuget.org/v3/index.json
-#        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 #      run: ./Push.ps1
 #      shell: pwsh
     - name: Artifacts
