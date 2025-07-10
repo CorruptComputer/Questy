@@ -22,7 +22,7 @@ jobs:
       uses: ./.github/actions/setup-env
 
     - name: Build Artifacts
-      run: dotnet pack ./src/NG.Mediator/NG.Mediator.csproj -c Release -o "./artifacts"
+      run: dotnet pack ./NG.Mediator/NG.Mediator.csproj -c Release -o "./artifacts"
 
     - name: Artifacts
       uses: actions/upload-artifact@v4

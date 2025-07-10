@@ -36,6 +36,24 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NG.Mediator.Examples.Stashb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.Mediator", "NG.Mediator\NG.Mediator.csproj", "{943AB1A5-7061-4884-ADDD-026AE5425498}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{81E174CC-10E9-FDEC-9BF6-358A27C24580}"
+	ProjectSection(SolutionItems) = preProject
+		.github\dependabot.yml = .github\dependabot.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "actions", "actions", "{7814AB59-DF59-84D6-6B54-E4DFC353FC18}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{2F23F7C9-BFEB-C327-698B-2C8A44EBB0A3}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build-and-tests.yml = .github\workflows\build-and-tests.yml
+		.github\workflows\build-artifacts.yml = .github\workflows\build-artifacts.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-env", "setup-env", "{DBD377A0-E08E-B549-2B69-B75932D92EE6}"
+	ProjectSection(SolutionItems) = preProject
+		.github\actions\setup-env\action.yml = .github\actions\setup-env\action.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -106,6 +124,10 @@ Global
 		{004D029A-43E7-47B0-BA74-D0A9F7FC7713} = {E372BF0B-90E8-4DC1-A332-F023095A3C2A}
 		{7CEB57F2-B6DC-4A18-A040-D12555C3D32F} = {E372BF0B-90E8-4DC1-A332-F023095A3C2A}
 		{F9148E20-5856-484C-8410-B515C6C56214} = {E372BF0B-90E8-4DC1-A332-F023095A3C2A}
+		{81E174CC-10E9-FDEC-9BF6-358A27C24580} = {1E133765-6B4E-46C2-8C6C-7238E8EABA79}
+		{7814AB59-DF59-84D6-6B54-E4DFC353FC18} = {81E174CC-10E9-FDEC-9BF6-358A27C24580}
+		{2F23F7C9-BFEB-C327-698B-2C8A44EBB0A3} = {81E174CC-10E9-FDEC-9BF6-358A27C24580}
+		{DBD377A0-E08E-B549-2B69-B75932D92EE6} = {7814AB59-DF59-84D6-6B54-E4DFC353FC18}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D58286E3-878B-4ACB-8E76-F61E708D4339}
