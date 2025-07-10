@@ -1,13 +1,9 @@
-name: Build Artifacts
+name: Build NuGet Package
 
 on:
   push:
     branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
-  workflow_dispatch:
+      - release
 
 jobs:
   build:
@@ -24,8 +20,7 @@ jobs:
     - name: Build Artifacts
       run: dotnet pack ./NG.Mediator/NG.Mediator.csproj --configuration Release --output "./artifacts" --include-source
 
-    - name: Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: 'artifacts.zip'
-        path: ./artifacts/*
+    - name: Push to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY
