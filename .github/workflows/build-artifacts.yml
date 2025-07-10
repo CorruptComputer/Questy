@@ -21,14 +21,14 @@ jobs:
     - name: Setup Environment
       uses: ./.github/actions/setup-env
 
-    - name: Build and Test
-      run: dotnet pack .\src\NG.Mediator\NG.Mediator.csproj -c Release -o ".\artifacts"
+    - name: Build Artifacts
+      run: dotnet pack ./src/NG.Mediator/NG.Mediator.csproj -c Release -o "./artifacts"
 
     - name: Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 'artifacts.zip'
-        path: artifacts/**/*
+        path: ./artifacts/*
 
 #on:
 #  push:
