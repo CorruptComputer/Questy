@@ -10,6 +10,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1E133765-6B4E-46C2-8C6C-7238E8EABA79}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		NuGet.Config = NuGet.Config
+		LICENSE = LICENSE
+		global.json = global.json
+		.gitignore = .gitignore
+		.gitattributes = .gitattributes
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Questy.Benchmarks", "Tests\Questy.Benchmarks\Questy.Benchmarks.csproj", "{1FA62162-F8F1-4CAD-B08E-8DCA603395AD}"
@@ -52,6 +57,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-env", "setup-env", "{DBD377A0-E08E-B549-2B69-B75932D92EE6}"
 	ProjectSection(SolutionItems) = preProject
 		.github\actions\setup-env\action.yml = .github\actions\setup-env\action.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".vscode", ".vscode", "{A623B1D2-AA67-E283-B623-2E225F98ACD8}"
+	ProjectSection(SolutionItems) = preProject
+		.vscode\extensions.json = .vscode\extensions.json
+		.vscode\Questy.code-workspace = .vscode\Questy.code-workspace
+		.vscode\settings.json = .vscode\settings.json
 	EndProjectSection
 EndProject
 Global
@@ -128,6 +140,7 @@ Global
 		{7814AB59-DF59-84D6-6B54-E4DFC353FC18} = {81E174CC-10E9-FDEC-9BF6-358A27C24580}
 		{2F23F7C9-BFEB-C327-698B-2C8A44EBB0A3} = {81E174CC-10E9-FDEC-9BF6-358A27C24580}
 		{DBD377A0-E08E-B549-2B69-B75932D92EE6} = {7814AB59-DF59-84D6-6B54-E4DFC353FC18}
+		{A623B1D2-AA67-E283-B623-2E225F98ACD8} = {1E133765-6B4E-46C2-8C6C-7238E8EABA79}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D58286E3-878B-4ACB-8E76-F61E708D4339}

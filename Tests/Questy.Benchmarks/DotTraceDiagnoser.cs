@@ -19,7 +19,7 @@ namespace Questy.Benchmarks
     {
         public DotTraceDiagnoserAttribute()
         {
-            var manualConfig = ManualConfig.CreateEmpty();
+            ManualConfig manualConfig = ManualConfig.CreateEmpty();
             manualConfig.AddDiagnoser(new DotTraceDiagnoser());
             Config = manualConfig;
         }
@@ -71,7 +71,7 @@ namespace Questy.Benchmarks
 
         private void RunDotTrace(DiagnoserActionParameters parameters)
         {
-            var dotTrace = new Process
+            Process dotTrace = new()
             {
                 StartInfo = PrepareProcessStartInfo(parameters)
             };
@@ -119,7 +119,7 @@ namespace Questy.Benchmarks
         {
             try
             {
-                var startInfo = new ProcessStartInfo("dottrace")
+                ProcessStartInfo startInfo = new("dottrace")
                 {
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
@@ -127,7 +127,7 @@ namespace Questy.Benchmarks
                     CreateNoWindow = true,
                 };
 
-                using var process = new Process { StartInfo = startInfo };
+                using Process process = new() { StartInfo = startInfo };
                 process.Start();
                 process.WaitForExit();
 

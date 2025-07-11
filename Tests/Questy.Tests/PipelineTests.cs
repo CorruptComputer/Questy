@@ -92,7 +92,7 @@ public class PipelineTests
         public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            var response = await next();
+            Pong response = await next();
             _output.Messages.Add("Outer after");
 
             return response;
@@ -111,7 +111,7 @@ public class PipelineTests
         public async Task<Unit> Handle(VoidPing request, RequestHandlerDelegate<Unit> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            var response = await next();
+            Unit response = await next();
             _output.Messages.Add("Outer after");
 
             return response;
@@ -130,7 +130,7 @@ public class PipelineTests
         public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            var response = await next();
+            Pong response = await next();
             _output.Messages.Add("Inner after");
 
             return response;
@@ -149,7 +149,7 @@ public class PipelineTests
         public async Task<Unit> Handle(VoidPing request, RequestHandlerDelegate<Unit> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            var response = await next();
+            Unit response = await next();
             _output.Messages.Add("Inner after");
 
             return response;
@@ -169,7 +169,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner generic before");
-            var response = await next();
+            TResponse? response = await next();
             _output.Messages.Add("Inner generic after");
 
             return response;
@@ -188,7 +188,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer generic before");
-            var response = await next();
+            TResponse? response = await next();
             _output.Messages.Add("Outer generic after");
 
             return response;
@@ -209,7 +209,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Constrained before");
-            var response = await next();
+            TResponse response = await next();
             _output.Messages.Add("Constrained after");
 
             return response;
@@ -228,7 +228,7 @@ public class PipelineTests
         public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Concrete before");
-            var response = await next();
+            Pong response = await next();
             _output.Messages.Add("Concrete after");
 
             return response;
@@ -243,8 +243,8 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -259,9 +259,9 @@ public class PipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -278,8 +278,8 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_void_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -294,7 +294,7 @@ public class PipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Send(new VoidPing { Message = "Ping" });
 
@@ -311,8 +311,8 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_generics_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -329,9 +329,9 @@ public class PipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -348,8 +348,8 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_void_generics_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -367,7 +367,7 @@ public class PipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Send(new VoidPing { Message = "Ping" });
 
@@ -384,8 +384,8 @@ public class PipelineTests
     [Fact]
     public async Task Should_handle_constrained_generics()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -405,9 +405,9 @@ public class PipelineTests
 
         container.GetAllInstances<IPipelineBehavior<Ping, Pong>>();
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -424,7 +424,7 @@ public class PipelineTests
 
         output.Messages.Clear();
 
-        var zingResponse = await mediator.Send(new Zing { Message = "Zing" });
+        Zong zingResponse = await mediator.Send(new Zing { Message = "Zing" });
 
         zingResponse.Message.ShouldBe("Zing Zong");
 
@@ -441,8 +441,8 @@ public class PipelineTests
     [Fact(Skip = "Lamar does not mix concrete and open generics. Use constraints instead.")]
     public async Task Should_handle_concrete_and_open_generics()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -462,9 +462,9 @@ public class PipelineTests
 
         container.GetAllInstances<IPipelineBehavior<Ping, Pong>>();
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -481,7 +481,7 @@ public class PipelineTests
 
         output.Messages.Clear();
 
-        var zingResponse = await mediator.Send(new Zing { Message = "Zing" });
+        Zong zingResponse = await mediator.Send(new Zing { Message = "Zing" });
 
         zingResponse.Message.ShouldBe("Zing Zong");
 

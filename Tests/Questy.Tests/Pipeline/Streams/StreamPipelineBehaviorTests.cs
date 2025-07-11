@@ -37,7 +37,7 @@ public class StreamPipelineBehaviorTests
         {
             yield return new Song { Message = "Start behaving..." };
 
-            await foreach (var item in next().WithCancellation(cancellationToken).ConfigureAwait(false))
+            await foreach (Song? item in next().WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 yield return item;
             }
@@ -49,7 +49,7 @@ public class StreamPipelineBehaviorTests
     [Fact]
     public async Task Should_run_pipeline_behavior()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -63,12 +63,12 @@ public class StreamPipelineBehaviorTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var responses = mediator.CreateStream(new Sing { Message = "Sing" });
+        IAsyncEnumerable<Song> responses = mediator.CreateStream(new Sing { Message = "Sing" });
 
         int i = 0;
-        await foreach (var response in responses)
+        await foreach (Song? response in responses)
         {
             if (i == 0)
             {

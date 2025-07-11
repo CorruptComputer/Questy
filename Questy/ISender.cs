@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Questy;
+﻿namespace Questy;
 
 /// <summary>
 /// Send a request through the mediator pipeline to be handled by a single handler.

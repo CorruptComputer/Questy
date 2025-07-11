@@ -1,6 +1,6 @@
-namespace Questy.Examples;
+namespace Questy.Examples.Streams;
 
 public class Song
 {
-    public string Message { get; set; }
+    public required string Message { get; set; }
 }

@@ -61,7 +61,7 @@ namespace Questy.Tests.MicrosoftExtensionsDI
 
         protected static AssemblyBuilder CreateAssemblyModuleBuilder(string name, int classes, int interfaces, Action<ModuleBuilder> handlerCreation)
         {
-            AssemblyName assemblyName = new AssemblyName(name);
+            AssemblyName assemblyName = new(name);
             AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
 
@@ -73,7 +73,7 @@ namespace Questy.Tests.MicrosoftExtensionsDI
 
         protected static AssemblyBuilder GenerateCombinationsTestAssembly(int classes, int interfaces, int genericParameters)
         {
-            AssemblyName assemblyName = new AssemblyName("DynamicAssembly");
+            AssemblyName assemblyName = new("DynamicAssembly");
             AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
 
@@ -94,13 +94,13 @@ namespace Questy.Tests.MicrosoftExtensionsDI
             }
 
             // Define the dynamic request class
-            var handlerTypeBuilder = moduleBuilder!.DefineType($"{requestName}Handler", TypeAttributes.Public);
-            var requestTypeBuilder = moduleBuilder!.DefineType(requestName, TypeAttributes.Public);
+            TypeBuilder handlerTypeBuilder = moduleBuilder!.DefineType($"{requestName}Handler", TypeAttributes.Public);
+            TypeBuilder requestTypeBuilder = moduleBuilder!.DefineType(requestName, TypeAttributes.Public);
 
             // Define the generic parameters
             string[] genericParameterNames = GetGenericParameterNames(numberOfTypeParameters);
-            var handlerGenericParameters = handlerTypeBuilder.DefineGenericParameters(genericParameterNames);
-            var requestGenericParameters = requestTypeBuilder.DefineGenericParameters(genericParameterNames);
+            GenericTypeParameterBuilder[] handlerGenericParameters = handlerTypeBuilder.DefineGenericParameters(genericParameterNames);
+            GenericTypeParameterBuilder[] requestGenericParameters = requestTypeBuilder.DefineGenericParameters(genericParameterNames);
             requestTypeBuilder.AddInterfaceImplementation(typeof(IRequest));
 
             if(includeConstraints) 
@@ -109,13 +109,13 @@ namespace Questy.Tests.MicrosoftExtensionsDI
                 {
                     int interfaceIndex = i % numberOfInterfaces + 1;
 
-                    var constraintType = moduleBuilder.Assembly.GetType($"ITestInterface{interfaceIndex}");
+                    Type? constraintType = moduleBuilder.Assembly.GetType($"ITestInterface{interfaceIndex}");
                     handlerGenericParameters[i].SetInterfaceConstraints(constraintType!);
                     requestGenericParameters[i].SetInterfaceConstraints(constraintType!);
                 }
             }
 
-            var requestType = requestTypeBuilder.CreateTypeInfo().AsType();
+            Type requestType = requestTypeBuilder.CreateTypeInfo().AsType();
             handlerTypeBuilder.AddInterfaceImplementation(typeof(IRequestHandler<>).MakeGenericType(requestType));
 
             // Define the Handle method
@@ -156,7 +156,7 @@ namespace Questy.Tests.MicrosoftExtensionsDI
 
         protected List<Type[]> GenerateCombinations(Type[] types, int interfaces)
         {
-            var groups = new List<Type>[interfaces];
+            List<Type>[] groups = new List<Type>[interfaces];
             for (int i = 0; i < interfaces; i++)
             {
                 groups[i] = types.Where((t, index) => index % interfaces == i).ToList();
@@ -167,7 +167,7 @@ namespace Questy.Tests.MicrosoftExtensionsDI
 
         protected List<Type[]> GenerateCombinationsRecursive(List<Type>[] groups, int currentGroup)
         {
-            var result = new List<Type[]>();
+            List<Type[]> result = new();
 
             if (currentGroup == groups.Length)
             {
@@ -175,9 +175,9 @@ namespace Questy.Tests.MicrosoftExtensionsDI
                 return result;
             }
 
-            foreach (var type in groups[currentGroup])
+            foreach (Type type in groups[currentGroup])
             {
-                foreach (var subCombination in GenerateCombinationsRecursive(groups, currentGroup + 1))
+                foreach (Type[] subCombination in GenerateCombinationsRecursive(groups, currentGroup + 1))
                 {
                     result.Add(new[] { type }.Concat(subCombination).ToArray());
                 }
@@ -188,11 +188,11 @@ namespace Questy.Tests.MicrosoftExtensionsDI
 
         protected static int CalculateTotalCombinations(int numberOfClasses, int numberOfInterfaces, int numberOfTypeParameters)
         {
-            var testClasses = Enumerable.Range(1, numberOfClasses)
+            string[] testClasses = Enumerable.Range(1, numberOfClasses)
                 .Select(i => $"TestClass{i}")
                 .ToArray();
 
-            var groups = new List<string>[numberOfInterfaces];
+            List<string>[] groups = new List<string>[numberOfInterfaces];
             for (int i = 0; i < numberOfInterfaces; i++)
             {
                 groups[i] = testClasses.Where((t, index) => index % numberOfInterfaces == i).ToList();

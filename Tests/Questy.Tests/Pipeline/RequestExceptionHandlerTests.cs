@@ -87,7 +87,7 @@ public class RequestExceptionHandlerTests
     [Fact]
     public async Task Should_run_exception_handler_and_allow_for_exception_not_to_throw()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongExceptionHandler>();
@@ -96,9 +96,9 @@ public class RequestExceptionHandlerTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Thrown Handled by Type");
     }
@@ -106,7 +106,7 @@ public class RequestExceptionHandlerTests
     [Fact]
     public async Task Should_run_exception_handler_and_allow_for_exception_to_be_still_thrown()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongExceptionHandlerNotHandled>();
@@ -114,9 +114,9 @@ public class RequestExceptionHandlerTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var request = new Ping { Message = "Ping" };
+        Ping request = new() { Message = "Ping" };
         await Should.ThrowAsync<PingException>(async () =>
         {
             await mediator.Send(request);
@@ -128,7 +128,7 @@ public class RequestExceptionHandlerTests
     [Fact]
     public async Task Should_run_exception_handler_and_unwrap_expections_thrown_in_the_handler()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use<PingPongThrowingExceptionHandler>();
@@ -136,9 +136,9 @@ public class RequestExceptionHandlerTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var request = new Ping { Message = "Ping" };
+        Ping request = new() { Message = "Ping" };
         await Should.ThrowAsync<ApplicationException>(async () =>
         {
             await mediator.Send(request);
@@ -148,8 +148,8 @@ public class RequestExceptionHandlerTests
     [Fact]
     public async Task Should_run_matching_exception_handlers_only_once()
     {
-        var genericPingExceptionHandler = new GenericPingExceptionHandler();
-        var container = new Container(cfg =>
+        GenericPingExceptionHandler genericPingExceptionHandler = new();
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionHandler<Ping, Pong, Exception>>().Use(genericPingExceptionHandler);
@@ -157,9 +157,9 @@ public class RequestExceptionHandlerTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var request = new Ping { Message = "Ping" };
+        Ping request = new() { Message = "Ping" };
         await Should.ThrowAsync<PingException>(async () =>
         {
             await mediator.Send(request);

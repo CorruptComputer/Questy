@@ -75,7 +75,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<Pong> Handle(Ping request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            await foreach (var result in next())
+            await foreach (Pong result in next())
             {
                 yield return result;
             }
@@ -95,7 +95,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<Pong> Handle(Ping request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            await foreach (var result in next())
+            await foreach (Pong result in next())
             {
                 yield return result;
             }
@@ -116,7 +116,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner generic before");
-            await foreach (var result in next())
+            await foreach (TResponse? result in next())
             {
                 yield return result;
             }
@@ -137,7 +137,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer generic before");
-            await foreach (var result in next())
+            await foreach (TResponse? result in next())
             {
                 yield return result;
             }
@@ -158,7 +158,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Constrained before");
-            await foreach (var result in next())
+            await foreach (TResponse result in next())
             {
                 yield return result;
             }
@@ -178,7 +178,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<Pong> Handle(Ping request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Concrete before");
-            await foreach (var result in next())
+            await foreach (Pong result in next())
             {
                 yield return result;
             }
@@ -194,8 +194,8 @@ public class StreamPipelineTests
     [Fact]
     public async Task Should_wrap_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -210,9 +210,9 @@ public class StreamPipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        await foreach(var response in mediator.CreateStream(new Ping { Message = "Ping" }))
+        await foreach(Pong? response in mediator.CreateStream(new Ping { Message = "Ping" }))
         {
             response.Message.ShouldBe("Ping Pong");
         }
@@ -230,8 +230,8 @@ public class StreamPipelineTests
     [Fact]
     public async Task Should_wrap_generics_with_behavior()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -248,9 +248,9 @@ public class StreamPipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        await foreach (var response in mediator.CreateStream(new Ping { Message = "Ping" }))
+        await foreach (Pong? response in mediator.CreateStream(new Ping { Message = "Ping" }))
         {
             response.Message.ShouldBe("Ping Pong");
         }
@@ -268,8 +268,8 @@ public class StreamPipelineTests
     [Fact]
     public async Task Should_handle_constrained_generics()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -287,9 +287,9 @@ public class StreamPipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        await foreach (var response in mediator.CreateStream(new Ping { Message = "Ping" }))
+        await foreach (Pong? response in mediator.CreateStream(new Ping { Message = "Ping" }))
         {
             response.Message.ShouldBe("Ping Pong");
         }
@@ -307,7 +307,7 @@ public class StreamPipelineTests
 
         output.Messages.Clear();
 
-        await foreach (var response in mediator.CreateStream(new Zing { Message = "Zing" }))
+        await foreach (Zong? response in mediator.CreateStream(new Zing { Message = "Zing" }))
         {
             response.Message.ShouldBe("Zing Zong");
         }
@@ -325,8 +325,8 @@ public class StreamPipelineTests
     [Fact(Skip = "Lamar does not mix concrete and open generics. Use constraints instead.")]
     public async Task Should_handle_concrete_and_open_generics()
     {
-        var output = new Logger();
-        var container = new Container(cfg =>
+        Logger output = new();
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -344,9 +344,9 @@ public class StreamPipelineTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        await foreach (var response in mediator.CreateStream(new Ping { Message = "Ping" }))
+        await foreach (Pong? response in mediator.CreateStream(new Ping { Message = "Ping" }))
         {
             response.Message.ShouldBe("Ping Pong");
         }
@@ -364,7 +364,7 @@ public class StreamPipelineTests
 
         output.Messages.Clear();
 
-        await foreach (var response in mediator.CreateStream(new Zing { Message = "Zing" }))
+        await foreach (Zong? response in mediator.CreateStream(new Zing { Message = "Zing" }))
         {
             response.Message.ShouldBe("Zing Zong");
         }

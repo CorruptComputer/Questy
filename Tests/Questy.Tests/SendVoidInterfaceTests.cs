@@ -29,10 +29,10 @@ public class SendVoidInterfaceTests
     [Fact]
     public async Task Should_resolve_main_void_handler()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -47,7 +47,7 @@ public class SendVoidInterfaceTests
         });
 
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Send(new Ping { Message = "Ping" });
 

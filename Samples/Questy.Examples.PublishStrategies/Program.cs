@@ -8,7 +8,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddSingleton<Publisher>();
 
@@ -17,11 +17,11 @@ class Program
         services.AddTransient<INotificationHandler<Pinged>>(sp => new AsyncPingedHandler("3"));
         services.AddTransient<INotificationHandler<Pinged>>(sp => new SyncPingedHandler("4"));
 
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var publisher = provider.GetRequiredService<Publisher>();
+        Publisher publisher = provider.GetRequiredService<Publisher>();
 
-        var pinged = new Pinged();
+        Pinged pinged = new();
 
         foreach (PublishStrategy strategy in Enum.GetValues(typeof(PublishStrategy)))
         {

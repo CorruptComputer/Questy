@@ -96,10 +96,10 @@ public class RequestExceptionActionTests
     [Fact]
     public async Task Should_run_all_exception_actions_that_match_base_type()
     {
-        var pingExceptionAction = new PingExceptionAction();
-        var pongExceptionAction = new PongExceptionAction();
-        var pingPongExceptionAction = new PingPongExceptionAction<Ping>();
-        var container = new Container(cfg =>
+        PingExceptionAction pingExceptionAction = new();
+        PongExceptionAction pongExceptionAction = new();
+        PingPongExceptionAction<Ping> pingPongExceptionAction = new();
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionAction<Ping, PingException>>().Use(_ => pingExceptionAction);
@@ -109,9 +109,9 @@ public class RequestExceptionActionTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var request = new Ping { Message = "Ping!" };
+        Ping request = new() { Message = "Ping!" };
         await Assert.ThrowsAsync<PingException>(() => mediator.Send(request));
 
         pingExceptionAction.Executed.ShouldBeTrue();
@@ -122,8 +122,8 @@ public class RequestExceptionActionTests
     [Fact]
     public async Task Should_run_matching_exception_actions_only_once()
     {
-        var genericExceptionAction = new GenericExceptionAction<Ping>();
-        var container = new Container(cfg =>
+        GenericExceptionAction<Ping> genericExceptionAction = new();
+        Container container = new(cfg =>
         {
             cfg.For<IRequestHandler<Ping, Pong>>().Use<PingHandler>();
             cfg.For<IRequestExceptionAction<Ping, Exception>>().Use(_ => genericExceptionAction);
@@ -131,9 +131,9 @@ public class RequestExceptionActionTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var request = new Ping { Message = "Ping!" };
+        Ping request = new() { Message = "Ping!" };
         await Assert.ThrowsAsync<PingException>(() => mediator.Send(request));
 
         genericExceptionAction.ExecutionCount.ShouldBe(1);

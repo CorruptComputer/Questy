@@ -41,7 +41,7 @@ public class RequestPreProcessorTests
     [Fact]
     public async Task Should_run_preprocessors()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -55,9 +55,9 @@ public class RequestPreProcessorTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Ping Pong");
     }

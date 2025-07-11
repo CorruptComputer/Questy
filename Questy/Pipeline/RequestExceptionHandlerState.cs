@@ -1,7 +1,7 @@
 namespace Questy.Pipeline;
 
 /// <summary>
-/// Represents the result of handling an exception thrown by a request handler
+///   Represents the result of handling an exception thrown by a request handler
 /// </summary>
 /// <typeparam name="TResponse">Response type</typeparam>
 public class RequestExceptionHandlerState<TResponse>

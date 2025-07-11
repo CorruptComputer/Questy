@@ -1,24 +1,21 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Questy.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
-
+using Questy.Examples.Streams;
+using Questy.Pipeline;
 
 namespace Questy.Examples.AspNetCore;
 
 public static class Program
 {
-    public static Task Main(string[] args)
+    public static Task Main()
     {
-        var writer = new WrappingWriter(Console.Out);
-        var mediator = BuildMediator(writer);
+        WrappingWriter writer = new(Console.Out);
+        IMediator mediator = BuildMediator(writer);
         return Runner.Run(mediator, writer, "ASP.NET Core DI", testStreams: true);
     }
 
     private static IMediator BuildMediator(WrappingWriter writer)
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddSingleton<TextWriter>(writer);
 
@@ -34,7 +31,7 @@ public static class Program
         services.AddScoped(typeof(IRequestPostProcessor<,>), typeof(GenericRequestPostProcessor<,>));
         services.AddScoped(typeof(IStreamPipelineBehavior<,>), typeof(GenericStreamPipelineBehavior<,>));
 
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
         return provider.GetRequiredService<IMediator>();
     }

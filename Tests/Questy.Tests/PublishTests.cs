@@ -51,10 +51,10 @@ public class PublishTests
     [Fact]
     public async Task Should_resolve_main_handler()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -67,11 +67,11 @@ public class PublishTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Publish(new Ping { Message = "Ping" });
 
-        var result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
     }
@@ -79,10 +79,10 @@ public class PublishTests
     [Fact]
     public async Task Should_resolve_main_handler_when_object_is_passed()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -95,12 +95,12 @@ public class PublishTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         object message = new Ping { Message = "Ping" };
         await mediator.Publish(message);
 
-        var result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
     }
@@ -114,7 +114,7 @@ public class PublishTests
 
         protected override async Task PublishCore(IEnumerable<NotificationHandlerExecutor> allHandlers, INotification notification, CancellationToken cancellationToken)
         {
-            foreach (var handler in allHandlers)
+            foreach (NotificationHandlerExecutor handler in allHandlers)
             {
                 await handler.HandlerCallback(notification, cancellationToken).ConfigureAwait(false);
             }
@@ -127,7 +127,7 @@ public class PublishTests
 
         public async Task Publish(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken)
         {
-            foreach (var handler in handlerExecutors)
+            foreach (NotificationHandlerExecutor handler in handlerExecutors)
             {
                 await handler.HandlerCallback(notification, cancellationToken).ConfigureAwait(false);
                 CallCount++;
@@ -138,10 +138,10 @@ public class PublishTests
     [Fact]
     public async Task Should_override_with_sequential_firing()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -154,11 +154,11 @@ public class PublishTests
             cfg.For<IMediator>().Use<SequentialMediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Publish(new Ping { Message = "Ping" });
 
-        var result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
     }
@@ -166,11 +166,11 @@ public class PublishTests
     [Fact]
     public async Task Should_override_with_sequential_firing_through_injection()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
-        var publisher = new SequentialPublisher();
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
+        SequentialPublisher publisher = new();
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -184,11 +184,11 @@ public class PublishTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         await mediator.Publish(new Ping { Message = "Ping" });
 
-        var result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
         publisher.CallCount.ShouldBe(2);
@@ -197,10 +197,10 @@ public class PublishTests
     [Fact]
     public async Task Should_resolve_handlers_given_interface()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -213,13 +213,13 @@ public class PublishTests
             cfg.For<IMediator>().Use<SequentialMediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         // wrap notifications in an array, so this test won't break on a 'replace with var' refactoring
-        var notifications = new INotification[] { new Ping { Message = "Ping" } };
+        INotification[] notifications = new INotification[] { new Ping { Message = "Ping" } };
         await mediator.Publish(notifications[0]);
 
-        var result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
     }
@@ -227,10 +227,10 @@ public class PublishTests
     [Fact]
     public async Task Should_resolve_main_handler_by_specific_interface()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -243,11 +243,11 @@ public class PublishTests
             cfg.For<IPublisher>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IPublisher>();
+        IPublisher mediator = container.GetInstance<IPublisher>();
 
         await mediator.Publish(new Ping { Message = "Ping" });
 
-        var result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
+        string[] result = builder.ToString().Split(new [] {Environment.NewLine}, StringSplitOptions.None);
         result.ShouldContain("Ping Pong");
         result.ShouldContain("Ping Pung");
     }

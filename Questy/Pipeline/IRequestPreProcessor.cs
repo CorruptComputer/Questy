@@ -1,8 +1,5 @@
 namespace Questy.Pipeline;
 
-using System.Threading;
-using System.Threading.Tasks;
-
 /// <summary>
 /// Defined a request pre-processor for a handler
 /// </summary>

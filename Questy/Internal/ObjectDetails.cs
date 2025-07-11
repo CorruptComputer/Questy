@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Questy.Internal;
 
 internal class ObjectDetails : IComparer<ObjectDetails>
@@ -21,7 +18,7 @@ internal class ObjectDetails : IComparer<ObjectDetails>
     {
         Value = value;
         Type = Value.GetType();
-        var exceptionHandlerType = value.GetType();
+        Type exceptionHandlerType = value.GetType();
 
         Name = exceptionHandlerType.Name;
         AssemblyName = exceptionHandlerType.Assembly.GetName().Name;

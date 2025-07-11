@@ -20,7 +20,7 @@ public class PipelineMultiCallToConstructorTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("ConstructorTestBehavior before");
-            var response = await next();
+            TResponse? response = await next();
             _output.Messages.Add("ConstructorTestBehavior after");
 
             return response;
@@ -76,7 +76,7 @@ public class PipelineMultiCallToConstructorTests
         ConstructorTestHandler.ResetCallCount();
         ConstructorTestHandler.ConstructorCallCount.ShouldBe(0);
 
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
 
         services.AddSingleton(output);
@@ -86,11 +86,11 @@ public class PipelineMultiCallToConstructorTests
             cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly);
             cfg.AddOpenBehavior(typeof(ConstructorTestBehavior<,>));
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var response = await mediator.Send(new ConstructorTestRequest { Message = "ConstructorPing" });
+        ConstructorTestResponse response = await mediator.Send(new ConstructorTestRequest { Message = "ConstructorPing" });
 
         response.Message.ShouldBe("ConstructorPing ConstructorPong");
 

@@ -41,7 +41,7 @@ public class RequestPostProcessorTests
     [Fact]
     public async Task Should_run_postprocessors()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -55,9 +55,9 @@ public class RequestPostProcessorTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong Ping");
     }

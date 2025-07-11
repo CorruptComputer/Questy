@@ -1,10 +1,6 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Questy.Examples;
+namespace Questy.Examples.Streams;
 
 public class SingHandler : IStreamRequestHandler<Sing, Song>
 {

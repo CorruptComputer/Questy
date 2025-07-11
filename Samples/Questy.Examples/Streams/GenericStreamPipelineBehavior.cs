@@ -1,12 +1,10 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Questy.Examples;
 
-public class GenericStreamPipelineBehavior<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse>
+public class GenericStreamPipelineBehavior<TRequest, TResponse> 
+    : IStreamPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
 {
     private readonly TextWriter _writer;
 
@@ -18,7 +16,7 @@ public class GenericStreamPipelineBehavior<TRequest, TResponse> : IStreamPipelin
     public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [EnumeratorCancellation]CancellationToken cancellationToken)
     {
         await _writer.WriteLineAsync("-- Handling StreamRequest");
-        await foreach (var response in next().WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (TResponse? response in next().WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             yield return response;
         }

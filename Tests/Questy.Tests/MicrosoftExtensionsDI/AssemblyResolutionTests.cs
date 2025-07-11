@@ -56,7 +56,7 @@ public class AssemblyResolutionTests
     [Fact]
     public void ShouldRequireAtLeastOneAssembly()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         Action registration = () => services.AddMediator(_ => { });
 

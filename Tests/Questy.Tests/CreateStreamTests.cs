@@ -34,7 +34,7 @@ public class CreateStreamTests
     [Fact]
     public async Task Should_resolve_main_handler()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -46,9 +46,9 @@ public class CreateStreamTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
-        var response = mediator.CreateStream(new Ping { Message = "Ping" });
+        IAsyncEnumerable<Pong> response = mediator.CreateStream(new Ping { Message = "Ping" });
         int i = 0;
         await foreach (Pong result in response)
         {
@@ -66,7 +66,7 @@ public class CreateStreamTests
     [Fact]
     public async Task Should_resolve_main_handler_via_dynamic_dispatch()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -78,10 +78,10 @@ public class CreateStreamTests
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         object request = new Ping { Message = "Ping" };
-        var response = mediator.CreateStream(request);
+        IAsyncEnumerable<object?> response = mediator.CreateStream(request);
         int i = 0;
         await foreach (Pong? result in response)
         {
@@ -99,7 +99,7 @@ public class CreateStreamTests
     [Fact]
     public async Task Should_resolve_main_handler_by_specific_interface()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -111,8 +111,8 @@ public class CreateStreamTests
             cfg.For<ISender>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<ISender>();
-        var response = mediator.CreateStream(new Ping { Message = "Ping" });
+        ISender mediator = container.GetInstance<ISender>();
+        IAsyncEnumerable<Pong> response = mediator.CreateStream(new Ping { Message = "Ping" });
         int i = 0;
         await foreach (Pong result in response)
         {
@@ -130,12 +130,12 @@ public class CreateStreamTests
     [Fact]
     public void Should_raise_execption_on_null_request()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         Should.Throw<ArgumentNullException>(() => mediator.CreateStream((Ping) null!));
     }
@@ -143,12 +143,12 @@ public class CreateStreamTests
     [Fact]
     public void Should_raise_execption_on_null_request_via_dynamic_dispatch()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.For<IMediator>().Use<Mediator>();
         });
 
-        var mediator = container.GetInstance<IMediator>();
+        IMediator mediator = container.GetInstance<IMediator>();
 
         Should.Throw<ArgumentNullException>(() => mediator.CreateStream((object) null!));
     }

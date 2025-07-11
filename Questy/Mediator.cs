@@ -1,44 +1,38 @@
 using Questy.NotificationPublishers;
+using Questy.Wrappers;
+using System.Collections.Concurrent;
 
 namespace Questy;
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Wrappers;
-
 /// <summary>
-/// Default mediator implementation relying on single- and multi instance delegates for resolving handlers.
+///   Default mediator implementation relying on single- and multi instance delegates for resolving handlers.
 /// </summary>
-public class Mediator : IMediator
+/// <remarks>
+///   Initializes a new instance of the <see cref="Mediator"/> class.
+/// </remarks>
+/// <param name="serviceProvider">Service provider. Can be a scoped or root provider</param>
+/// <param name="publisher">Notification publisher. Defaults to <see cref="ForeachAwaitPublisher"/>.</param>
+public class Mediator(IServiceProvider serviceProvider, INotificationPublisher publisher) : IMediator
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly INotificationPublisher _publisher;
     private static readonly ConcurrentDictionary<Type, RequestHandlerBase> _requestHandlers = new();
     private static readonly ConcurrentDictionary<Type, NotificationHandlerWrapper> _notificationHandlers = new();
     private static readonly ConcurrentDictionary<Type, StreamRequestHandlerBase> _streamRequestHandlers = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Mediator"/> class.
+    ///   Initializes a new instance of the <see cref="Mediator"/> class.
     /// </summary>
     /// <param name="serviceProvider">Service provider. Can be a scoped or root provider</param>
-    public Mediator(IServiceProvider serviceProvider) 
-        : this(serviceProvider, new ForeachAwaitPublisher()) { }
+    public Mediator(IServiceProvider serviceProvider) : this(serviceProvider, new ForeachAwaitPublisher()) { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Mediator"/> class.
+    ///   Sends a request and returns a response.
     /// </summary>
-    /// <param name="serviceProvider">Service provider. Can be a scoped or root provider</param>
-    /// <param name="publisher">Notification publisher. Defaults to <see cref="ForeachAwaitPublisher"/>.</param>
-    public Mediator(IServiceProvider serviceProvider, INotificationPublisher publisher)
-    {
-        _serviceProvider = serviceProvider;
-        _publisher = publisher;
-    }
-
+    /// <typeparam name="TResponse">The type for the response.</typeparam>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
         if (request == null)
@@ -46,16 +40,25 @@ public class Mediator : IMediator
             throw new ArgumentNullException(nameof(request));
         }
 
-        var handler = (RequestHandlerWrapper<TResponse>)_requestHandlers.GetOrAdd(request.GetType(), static requestType =>
+        RequestHandlerWrapper<TResponse> handler = (RequestHandlerWrapper<TResponse>)_requestHandlers.GetOrAdd(request.GetType(), static requestType =>
         {
-            var wrapperType = typeof(RequestHandlerWrapperImpl<,>).MakeGenericType(requestType, typeof(TResponse));
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {requestType}");
+            Type wrapperType = typeof(RequestHandlerWrapperImpl<,>).MakeGenericType(requestType, typeof(TResponse));
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {requestType}");
             return (RequestHandlerBase)wrapper;
         });
 
-        return handler.Handle(request, _serviceProvider, cancellationToken);
+        return handler.Handle(request, serviceProvider, cancellationToken);
     }
 
+    /// <summary>
+    ///   Sends a request without a response.
+    /// </summary>
+    /// <typeparam name="TRequest">The type for the request.</typeparam>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default)
         where TRequest : IRequest
     {
@@ -64,16 +67,25 @@ public class Mediator : IMediator
             throw new ArgumentNullException(nameof(request));
         }
 
-        var handler = (RequestHandlerWrapper)_requestHandlers.GetOrAdd(request.GetType(), static requestType =>
+        RequestHandlerWrapper handler = (RequestHandlerWrapper)_requestHandlers.GetOrAdd(request.GetType(), static requestType =>
         {
-            var wrapperType = typeof(RequestHandlerWrapperImpl<>).MakeGenericType(requestType);
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {requestType}");
+            Type wrapperType = typeof(RequestHandlerWrapperImpl<>).MakeGenericType(requestType);
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper type for {requestType}");
             return (RequestHandlerBase)wrapper;
         });
 
-        return handler.Handle(request, _serviceProvider, cancellationToken);
+        return handler.Handle(request, serviceProvider, cancellationToken);
     }
 
+    /// <summary>
+    ///   Sends a request and returns a response.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public Task<object?> Send(object request, CancellationToken cancellationToken = default)
     {
         if (request == null)
@@ -81,11 +93,11 @@ public class Mediator : IMediator
             throw new ArgumentNullException(nameof(request));
         }
 
-        var handler = _requestHandlers.GetOrAdd(request.GetType(), static requestType =>
+        RequestHandlerBase handler = _requestHandlers.GetOrAdd(request.GetType(), static requestType =>
         {
             Type wrapperType;
 
-            var requestInterfaceType = requestType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>));
+            Type? requestInterfaceType = requestType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>));
             if (requestInterfaceType is null)
             {
                 requestInterfaceType = requestType.GetInterfaces().FirstOrDefault(static i => i == typeof(IRequest));
@@ -98,18 +110,26 @@ public class Mediator : IMediator
             }
             else
             {
-                var responseType = requestInterfaceType.GetGenericArguments()[0];
+                Type responseType = requestInterfaceType.GetGenericArguments()[0];
                 wrapperType = typeof(RequestHandlerWrapperImpl<,>).MakeGenericType(requestType, responseType);
             }
 
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
             return (RequestHandlerBase)wrapper;
         });
 
         // call via dynamic dispatch to avoid calling through reflection for performance reasons
-        return handler.Handle(request, _serviceProvider, cancellationToken);
+        return handler.Handle(request, serviceProvider, cancellationToken);
     }
 
+    /// <summary>
+    ///   Publishes a notification to the appropriate handlers using the default strategy.
+    /// </summary>
+    /// <typeparam name="TNotification">The type of the notification.</typeparam>
+    /// <param name="notification">The notification.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
         where TNotification : INotification
     {
@@ -121,6 +141,14 @@ public class Mediator : IMediator
         return PublishNotification(notification, cancellationToken);
     }
 
+    /// <summary>
+    ///   Publishes a notification to the appropriate handlers using the specified strategy.
+    /// </summary>
+    /// <param name="notification">The notification.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
     public Task Publish(object notification, CancellationToken cancellationToken = default) =>
         notification switch
         {
@@ -130,28 +158,36 @@ public class Mediator : IMediator
         };
 
     /// <summary>
-    /// Override in a derived class to control how the tasks are awaited. By default the implementation calls the <see cref="INotificationPublisher"/>.
+    ///   Override in a derived class to control how the tasks are awaited. By default the implementation calls the <see cref="INotificationPublisher"/>.
     /// </summary>
     /// <param name="handlerExecutors">Enumerable of tasks representing invoking each notification handler</param>
     /// <param name="notification">The notification being published</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>A task representing invoking all handlers</returns>
-    protected virtual Task PublishCore(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken) 
-        => _publisher.Publish(handlerExecutors, notification, cancellationToken);
+    protected virtual Task PublishCore(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken)
+        => publisher.Publish(handlerExecutors, notification, cancellationToken);
 
     private Task PublishNotification(INotification notification, CancellationToken cancellationToken = default)
     {
-        var handler = _notificationHandlers.GetOrAdd(notification.GetType(), static notificationType =>
+        NotificationHandlerWrapper handler = _notificationHandlers.GetOrAdd(notification.GetType(), static notificationType =>
         {
-            var wrapperType = typeof(NotificationHandlerWrapperImpl<>).MakeGenericType(notificationType);
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {notificationType}");
+            Type wrapperType = typeof(NotificationHandlerWrapperImpl<>).MakeGenericType(notificationType);
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {notificationType}");
             return (NotificationHandlerWrapper)wrapper;
         });
 
-        return handler.Handle(notification, _serviceProvider, PublishCore, cancellationToken);
+        return handler.Handle(notification, serviceProvider, PublishCore, cancellationToken);
     }
 
-
+    /// <summary>
+    ///   Creates a stream request handler for the specified request type.
+    /// </summary>
+    /// <typeparam name="TResponse">The response type.</typeparam>
+    /// <param name="request">The stream request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
         if (request == null)
@@ -159,19 +195,27 @@ public class Mediator : IMediator
             throw new ArgumentNullException(nameof(request));
         }
 
-        var streamHandler = (StreamRequestHandlerWrapper<TResponse>)_streamRequestHandlers.GetOrAdd(request.GetType(), static requestType =>
+        StreamRequestHandlerWrapper<TResponse> streamHandler = (StreamRequestHandlerWrapper<TResponse>)_streamRequestHandlers.GetOrAdd(request.GetType(), static requestType =>
         {
-            var wrapperType = typeof(StreamRequestHandlerWrapperImpl<,>).MakeGenericType(requestType, typeof(TResponse));
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
+            Type wrapperType = typeof(StreamRequestHandlerWrapperImpl<,>).MakeGenericType(requestType, typeof(TResponse));
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
             return (StreamRequestHandlerBase)wrapper;
         });
 
-        var items = streamHandler.Handle(request, _serviceProvider, cancellationToken);
+        IAsyncEnumerable<TResponse> items = streamHandler.Handle(request, serviceProvider, cancellationToken);
 
         return items;
     }
 
-
+    /// <summary>
+    ///   Creates a stream request handler for the specified request type.
+    /// </summary>
+    /// <param name="request">The stream request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = default)
     {
         if (request == null)
@@ -179,21 +223,21 @@ public class Mediator : IMediator
             throw new ArgumentNullException(nameof(request));
         }
 
-        var handler = _streamRequestHandlers.GetOrAdd(request.GetType(), static requestType =>
+        StreamRequestHandlerBase handler = _streamRequestHandlers.GetOrAdd(request.GetType(), static requestType =>
         {
-            var requestInterfaceType = requestType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IStreamRequest<>));
+            Type? requestInterfaceType = requestType.GetInterfaces().FirstOrDefault(static i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IStreamRequest<>));
             if (requestInterfaceType is null)
             {
                 throw new ArgumentException($"{requestType.Name} does not implement IStreamRequest<TResponse>", nameof(request));
             }
 
-            var responseType = requestInterfaceType.GetGenericArguments()[0];
-            var wrapperType = typeof(StreamRequestHandlerWrapperImpl<,>).MakeGenericType(requestType, responseType);
-            var wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
+            Type responseType = requestInterfaceType.GetGenericArguments()[0];
+            Type wrapperType = typeof(StreamRequestHandlerWrapperImpl<,>).MakeGenericType(requestType, responseType);
+            object wrapper = Activator.CreateInstance(wrapperType) ?? throw new InvalidOperationException($"Could not create wrapper for type {requestType}");
             return (StreamRequestHandlerBase)wrapper;
         });
 
-        var items = handler.Handle(request, _serviceProvider, cancellationToken);
+        IAsyncEnumerable<object?> items = handler.Handle(request, serviceProvider, cancellationToken);
 
         return items;
     }

@@ -1,15 +1,11 @@
-using System.Threading;
-using System.Threading.Tasks;
+namespace Questy.Benchmarks;
 
-namespace Questy.Benchmarks
+public class Ping : IRequest
 {
-    public class Ping : IRequest
-    {
-        public string Message { get; set; }
-    }
+    public required string Message { get; set; }
+}
 
-    public class PingHandler : IRequestHandler<Ping>
-    {
-        public Task Handle(Ping request, CancellationToken cancellationToken) => Task.CompletedTask;
-    }
+public class PingHandler : IRequestHandler<Ping>
+{
+    public Task Handle(Ping request, CancellationToken cancellationToken) => Task.CompletedTask;
 }

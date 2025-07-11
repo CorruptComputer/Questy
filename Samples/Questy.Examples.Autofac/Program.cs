@@ -14,8 +14,8 @@ internal static class Program
 {
     public static Task Main(string[] args)
     {
-        var writer = new WrappingWriter(Console.Out);
-        var mediator = BuildMediator(writer);
+        WrappingWriter writer = new(Console.Out);
+        IMediator mediator = BuildMediator(writer);
 
         return Runner.Run(mediator, writer, "Autofac", testStreams: true);
     }
@@ -23,11 +23,11 @@ internal static class Program
     private static IMediator BuildMediator(WrappingWriter writer)
     {
 
-        var builder = new ContainerBuilder();
+        ContainerBuilder builder = new();
 
         builder.RegisterAssemblyTypes(typeof(IMediator).GetTypeInfo().Assembly).AsImplementedInterfaces();
 
-        var MediatorOpenTypes = new[]
+        Type[] MediatorOpenTypes = new[]
         {
                 typeof(IRequestHandler<,>),
                 typeof(IRequestExceptionHandler<,,>),
@@ -36,7 +36,7 @@ internal static class Program
                 typeof(IStreamRequestHandler<,>)
             };
 
-        foreach (var MediatorOpenType in MediatorOpenTypes)
+        foreach (Type? MediatorOpenType in MediatorOpenTypes)
         {
             builder
                 .RegisterAssemblyTypes(typeof(Ping).GetTypeInfo().Assembly)
@@ -66,7 +66,7 @@ internal static class Program
         builder.RegisterGeneric(typeof(ConstrainedPingedHandler<>)).As(typeof(INotificationHandler<>));
 
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         
         builder.Populate(services);
 
@@ -82,9 +82,9 @@ internal static class Program
         //    .Resolve<IEnumerable<IPipelineBehavior<Ping, Pong>>>()
         //    .ToList();
 
-        var container = builder.Build();
-        var serviceProvider = new AutofacServiceProvider(container);
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        IContainer container = builder.Build();
+        AutofacServiceProvider serviceProvider = new(container);
+        IMediator mediator = serviceProvider.GetRequiredService<IMediator>();
 
         return mediator;
     }

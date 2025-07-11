@@ -2,5 +2,5 @@ namespace Questy.Examples;
 
 public class Jing : IRequest
 {
-    public string Message { get; set; }
+    public required string Message { get; set; }
 }

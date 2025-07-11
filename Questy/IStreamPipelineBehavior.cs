@@ -1,8 +1,4 @@
-﻿
-namespace Questy;
-
-using System.Collections.Generic;
-using System.Threading;
+﻿namespace Questy;
 
 /// <summary>
 /// Represents an async enumerable continuation for the next task to execute in the pipeline

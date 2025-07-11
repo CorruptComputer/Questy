@@ -29,7 +29,7 @@ public class PipelineTests
         public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            var response = await next();
+            Pong response = await next();
             _output.Messages.Add("Outer after");
 
             return response;
@@ -48,7 +48,7 @@ public class PipelineTests
         public async Task<Pong> Handle(Ping request, RequestHandlerDelegate<Pong> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            var response = await next();
+            Pong response = await next();
             _output.Messages.Add("Inner after");
 
             return response;
@@ -67,7 +67,7 @@ public class PipelineTests
         public async IAsyncEnumerable<Pong> Handle(Ping request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            await foreach (var item in next().WithCancellation(cancellationToken))
+            await foreach (Pong? item in next().WithCancellation(cancellationToken))
             {
                 yield return item;
             }
@@ -87,7 +87,7 @@ public class PipelineTests
         public async IAsyncEnumerable<Pong> Handle(Ping request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            await foreach (var item in next().WithCancellation(cancellationToken))
+            await foreach (Pong? item in next().WithCancellation(cancellationToken))
             {
                 yield return item;
             }
@@ -108,7 +108,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner generic before");
-            var response = await next();
+            TResponse? response = await next();
             _output.Messages.Add("Inner generic after");
 
             return response;
@@ -128,7 +128,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer generic before");
-            var response = await next();
+            TResponse? response = await next();
             _output.Messages.Add("Outer generic after");
 
             return response;
@@ -149,7 +149,7 @@ public class PipelineTests
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _output.Messages.Add("Constrained before");
-            var response = await next();
+            TResponse response = await next();
             _output.Messages.Add("Constrained after");
 
             return response;
@@ -396,7 +396,7 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_with_behavior()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
@@ -405,11 +405,11 @@ public class PipelineTests
             cfg.AddBehavior<IPipelineBehavior<Ping, Pong>, OuterBehavior>();
             cfg.AddBehavior<IPipelineBehavior<Ping, Pong>, InnerBehavior>();
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -426,24 +426,24 @@ public class PipelineTests
     [Fact]
     public async Task Should_wrap_generics_with_behavior()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
         {
             // Call these registration methods multiple times to prove we don't register a service if it is already registered
-            for (var i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 cfg.AddOpenBehavior(typeof(OuterBehavior<,>));
                 cfg.AddOpenBehavior(typeof(InnerBehavior<,>));
                 cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly);
             }
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
-            
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        IMediator mediator = provider.GetRequiredService<IMediator>();
+
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -460,7 +460,7 @@ public class PipelineTests
     [Fact]
     public async Task Should_register_pre_and_post_processors()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
@@ -475,11 +475,11 @@ public class PipelineTests
             cfg.AddOpenRequestPostProcessor(typeof(FirstPostProcessor<,>));
             cfg.AddOpenRequestPostProcessor(typeof(NextPostProcessor<,>));
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -500,15 +500,15 @@ public class PipelineTests
     [Fact]
     public async Task Should_pick_up_specific_exception_behaviors()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly));
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new ApplicationException(msg.Message + " Thrown")});
+        Pong response = await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new ApplicationException(msg.Message + " Thrown")});
 
         response.Message.ShouldBe("Ping Thrown Handled by Specific Type");
         output.Messages.ShouldNotContain("Logging ApplicationException exception");
@@ -517,13 +517,13 @@ public class PipelineTests
     [Fact]
     public void Should_pick_up_base_exception_behaviors()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly));
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
         Should.Throw<Exception>(async () => await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new Exception(msg.Message + " Thrown")}));
 
@@ -534,7 +534,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_exceptions_from_behaviors()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
@@ -542,9 +542,9 @@ public class PipelineTests
             cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly);
             cfg.AddBehavior<ThrowingBehavior>();
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
         Should.Throw<Exception>(async () => await mediator.Send(new Ping {Message = "Ping"}));
 
@@ -555,13 +555,13 @@ public class PipelineTests
     [Fact]
     public void Should_pick_up_exception_actions()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly));
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
         Should.Throw<SystemException>(async () => await mediator.Send(new Ping {Message = "Ping", ThrowAction = msg => throw new SystemException(msg.Message + " Thrown")}));
 
@@ -572,7 +572,7 @@ public class PipelineTests
     [Fact]
     public async Task Should_handle_constrained_generics()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
@@ -590,11 +590,11 @@ public class PipelineTests
             cfg.AddOpenRequestPostProcessor(typeof(FirstPostProcessor<,>));
             cfg.AddOpenRequestPostProcessor(typeof(NextPostProcessor<,>));
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var response = await mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
 
@@ -619,7 +619,7 @@ public class PipelineTests
 
         output.Messages.Clear();
 
-        var zingResponse = await mediator.Send(new Zing { Message = "Zing" });
+        Zong zingResponse = await mediator.Send(new Zing { Message = "Zing" });
 
         zingResponse.Message.ShouldBe("Zing Zong");
 
@@ -658,7 +658,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_open_behavior_registration()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddOpenBehavior(typeof(OpenBehavior<,>));
         cfg.AddOpenStreamBehavior(typeof(OpenStreamBehavior<,>));
 
@@ -677,7 +677,7 @@ public class PipelineTests
         cfg.StreamBehaviorsToRegister[0].ImplementationInstance.ShouldBeNull();
         cfg.StreamBehaviorsToRegister[0].Lifetime.ShouldBe(ServiceLifetime.Transient);
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -691,7 +691,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_inferred_behavior_registration()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddBehavior<InnerBehavior>();
         cfg.AddBehavior(typeof(OuterBehavior));
 
@@ -707,8 +707,8 @@ public class PipelineTests
         cfg.BehaviorsToRegister[1].ImplementationFactory.ShouldBeNull();
         cfg.BehaviorsToRegister[1].ImplementationInstance.ShouldBeNull();
         cfg.BehaviorsToRegister[1].Lifetime.ShouldBe(ServiceLifetime.Transient);
-        
-        var services = new ServiceCollection();
+
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -723,7 +723,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_inferred_stream_behavior_registration()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddStreamBehavior<InnerStreamBehavior>();
         cfg.AddStreamBehavior(typeof(OuterStreamBehavior));
 
@@ -739,8 +739,8 @@ public class PipelineTests
         cfg.StreamBehaviorsToRegister[1].ImplementationFactory.ShouldBeNull();
         cfg.StreamBehaviorsToRegister[1].ImplementationInstance.ShouldBeNull();
         cfg.StreamBehaviorsToRegister[1].Lifetime.ShouldBe(ServiceLifetime.Transient);
-        
-        var services = new ServiceCollection();
+
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -754,7 +754,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_inferred_pre_processor_registration()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddRequestPreProcessor<FirstConcretePreProcessor>();
         cfg.AddRequestPreProcessor(typeof(NextConcretePreProcessor));
 
@@ -770,8 +770,8 @@ public class PipelineTests
         cfg.RequestPreProcessorsToRegister[1].ImplementationFactory.ShouldBeNull();
         cfg.RequestPreProcessorsToRegister[1].ImplementationInstance.ShouldBeNull();
         cfg.RequestPreProcessorsToRegister[1].Lifetime.ShouldBe(ServiceLifetime.Transient);
-        
-        var services = new ServiceCollection();
+
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -785,7 +785,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_inferred_post_processor_registration()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddRequestPostProcessor<FirstConcretePostProcessor>();
         cfg.AddRequestPostProcessor(typeof(NextConcretePostProcessor));
 
@@ -801,8 +801,8 @@ public class PipelineTests
         cfg.RequestPostProcessorsToRegister[1].ImplementationFactory.ShouldBeNull();
         cfg.RequestPostProcessorsToRegister[1].ImplementationInstance.ShouldBeNull();
         cfg.RequestPostProcessorsToRegister[1].Lifetime.ShouldBe(ServiceLifetime.Transient);
-        
-        var services = new ServiceCollection();
+
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -816,7 +816,7 @@ public class PipelineTests
     [Fact]
     public void Should_handle_open_behaviors_registration_from_a_single_type()
     {
-        var cfg = new MediatorServiceConfiguration();
+        MediatorServiceConfiguration cfg = new();
         cfg.AddOpenBehavior(typeof(MultiOpenBehavior<,>), ServiceLifetime.Singleton);
         cfg.AddOpenStreamBehavior(typeof(MultiOpenBehavior<,>), ServiceLifetime.Singleton);
 
@@ -834,8 +834,8 @@ public class PipelineTests
         cfg.StreamBehaviorsToRegister[0].ImplementationFactory.ShouldBeNull();
         cfg.StreamBehaviorsToRegister[0].ImplementationInstance.ShouldBeNull();
         cfg.StreamBehaviorsToRegister[0].Lifetime.ShouldBe(ServiceLifetime.Singleton);
-        
-        var services = new ServiceCollection();
+
+        ServiceCollection services = new();
 
         cfg.RegisterServicesFromAssemblyContaining<Ping>();
 
@@ -849,12 +849,12 @@ public class PipelineTests
     [Fact]
     public void Should_auto_register_processors_when_configured_including_all_concrete_types()
     {
-        var cfg = new MediatorServiceConfiguration
+        MediatorServiceConfiguration cfg = new()
         {
             AutoRegisterRequestProcessors = true
         };
 
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
 
@@ -862,14 +862,14 @@ public class PipelineTests
 
         services.AddMediator(cfg);
 
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var preProcessors = provider.GetServices(typeof(IRequestPreProcessor<Ping>)).ToList();
+        List<object?> preProcessors = provider.GetServices(typeof(IRequestPreProcessor<Ping>)).ToList();
         preProcessors.Count.ShouldBeGreaterThan(0);
         preProcessors.ShouldContain(p => p != null && p.GetType() == typeof(FirstConcretePreProcessor));
         preProcessors.ShouldContain(p => p != null && p.GetType() == typeof(NextConcretePreProcessor));
 
-        var postProcessors = provider.GetServices(typeof(IRequestPostProcessor<Ping, Pong>)).ToList();
+        List<object?> postProcessors = provider.GetServices(typeof(IRequestPostProcessor<Ping, Pong>)).ToList();
         postProcessors.Count.ShouldBeGreaterThan(0);
         postProcessors.ShouldContain(p => p != null && p.GetType() == typeof(FirstConcretePostProcessor));
         postProcessors.ShouldContain(p => p != null && p.GetType() == typeof(NextConcretePostProcessor));
@@ -939,27 +939,27 @@ public class PipelineTests
     [Fact]
     public async Task Should_register_correctly()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddMediator(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining<FooRequest>();
             cfg.AddBehavior<ClosedBehavior>();
             cfg.AddOpenBehavior(typeof(Open2Behavior<,>));
         });
-        var logger = new Logger();
+        Logger logger = new();
         services.AddSingleton(logger);
         services.AddSingleton(new Questy.Tests.PipelineTests.Logger());
         services.AddSingleton(new Questy.Tests.StreamPipelineTests.Logger());
         services.AddSingleton(new Questy.Tests.SendTests.Dependency());
         services.AddSingleton<System.IO.TextWriter>(new System.IO.StringWriter());
         services.AddTransient(typeof(IBlogger<>), typeof(Blogger<>));
-        var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true
         });
 
-        var mediator = provider.GetRequiredService<IMediator>();
-        var request = new FooRequest();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
+        FooRequest request = new();
         await mediator.Send(request);
         
         logger.Messages.ShouldBe(new []
@@ -1025,32 +1025,32 @@ public class PipelineTests
     [Fact]
     public async Task Should_register_open_behaviors_correctly()
     {
-        var behaviorTypeList = new List<Type>
+        List<Type> behaviorTypeList = new()
         {
             typeof(OpenBehaviorMultipleRegistration0<,>),
             typeof(OpenBehaviorMultipleRegistration1<,>),
             typeof(OpenBehaviorMultipleRegistration2<,>)
         };
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddMediator(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining<FooRequest>();
             cfg.AddOpenBehaviors(behaviorTypeList);
         });
-        var logger = new Logger();
+        Logger logger = new();
         services.AddSingleton(logger);
         services.AddSingleton(new Questy.Tests.PipelineTests.Logger());
         services.AddSingleton(new Questy.Tests.StreamPipelineTests.Logger());
         services.AddSingleton(new Questy.Tests.SendTests.Dependency());
         services.AddSingleton<System.IO.TextWriter>(new System.IO.StringWriter());
         services.AddTransient(typeof(IBlogger<>), typeof(Blogger<>));
-        var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true
         });
 
-        var mediator = provider.GetRequiredService<IMediator>();
-        var request = new FooRequest();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
+        FooRequest request = new();
         await mediator.Send(request);
 
         logger.Messages.ShouldBe(new[]

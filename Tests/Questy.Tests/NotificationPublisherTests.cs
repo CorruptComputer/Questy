@@ -33,23 +33,23 @@ public class NotificationPublisherTests
     [Fact]
     public async Task Should_handle_sequentially_by_default()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddMediator(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining<Notification>();
         });
-        var serviceProvider = services.BuildServiceProvider();
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
 
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        IMediator mediator = serviceProvider.GetRequiredService<IMediator>();
 
-        var timer = new Stopwatch();
+        Stopwatch timer = new();
         timer.Start();
 
         await mediator.Publish(new Notification());
 
         timer.Stop();
-        
-        var sequentialElapsed = timer.ElapsedMilliseconds;
+
+        long sequentialElapsed = timer.ElapsedMilliseconds;
 
         services = new ServiceCollection();
         services.AddMediator(cfg =>
@@ -66,8 +66,8 @@ public class NotificationPublisherTests
         await mediator.Publish(new Notification());
 
         timer.Stop();
-        
-        var parallelElapsed = timer.ElapsedMilliseconds;
+
+        long parallelElapsed = timer.ElapsedMilliseconds;
 
         sequentialElapsed.ShouldBeGreaterThan(parallelElapsed);
     }

@@ -17,7 +17,7 @@ namespace Questy.Benchmarks
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             await _writer.WriteLineAsync("-- Handling Request");
-            var response = await next();
+            TResponse? response = await next();
             await _writer.WriteLineAsync("-- Finished Request");
             return response;
         }

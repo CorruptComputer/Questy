@@ -89,7 +89,7 @@ public class GenericTypeConstraintsTests
 
     public GenericTypeConstraintsTests()
     {
-        var container = new Container(cfg =>
+        Container container = new(cfg =>
         {
             cfg.Scan(scanner =>
             {
@@ -110,13 +110,13 @@ public class GenericTypeConstraintsTests
     public async Task Should_Resolve_Void_Return_Request()
     {
         // Create Request
-        var jing = new Jing { Message = "Jing" };
+        Jing jing = new() { Message = "Jing" };
 
         // Test mediator still works sending request
         await _mediator.Send(jing);
 
         // Create new instance of type constrained class
-        var genericTypeConstraintsVoidReturn = new  GenericTypeConstraintJing();
+        GenericTypeConstraintJing genericTypeConstraintsVoidReturn = new();
 
         // Assert it is of type IRequest and IRequest<T>
         Assert.True(genericTypeConstraintsVoidReturn.IsIRequest);
@@ -124,7 +124,7 @@ public class GenericTypeConstraintsTests
         Assert.True(genericTypeConstraintsVoidReturn.IsIBaseRequest);
 
         // Verify it is of IRequest and IBaseRequest
-        var results = genericTypeConstraintsVoidReturn.Handle(jing);
+        Type[] results = genericTypeConstraintsVoidReturn.Handle(jing);
 
         Assert.Equal(2, results.Length);
 
@@ -137,14 +137,14 @@ public class GenericTypeConstraintsTests
     public async Task Should_Resolve_Response_Return_Request()
     {
         // Create Request
-        var ping = new Ping { Message = "Ping" };
+        Ping ping = new() { Message = "Ping" };
 
         // Test mediator still works sending request and gets response
-        var pingResponse = await _mediator.Send(ping);
+        Pong pingResponse = await _mediator.Send(ping);
         pingResponse.Message.ShouldBe("Ping Pong");
 
         // Create new instance of type constrained class
-        var genericTypeConstraintsResponseReturn = new GenericTypeConstraintPing();
+        GenericTypeConstraintPing genericTypeConstraintsResponseReturn = new();
 
         // Assert it is of type IRequest<T> but not IRequest
         Assert.False(genericTypeConstraintsResponseReturn.IsIRequest);
@@ -152,7 +152,7 @@ public class GenericTypeConstraintsTests
         Assert.True(genericTypeConstraintsResponseReturn.IsIBaseRequest);
 
         // Verify it is of IRequest<Pong> and IBaseRequest, but not IRequest
-        var results = genericTypeConstraintsResponseReturn.Handle(ping);
+        Type[] results = genericTypeConstraintsResponseReturn.Handle(ping);
 
         Assert.Equal(2, results.Length);
 

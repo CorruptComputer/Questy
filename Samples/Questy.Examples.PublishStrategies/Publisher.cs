@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Questy.Examples.PublishStrategies;
 
 public class Publisher
@@ -42,9 +36,14 @@ public class Publisher
 
     public Task Publish<TNotification>(TNotification notification, PublishStrategy strategy, CancellationToken cancellationToken)
     {
-        if (!PublishStrategies.TryGetValue(strategy, out var mediator))
+        if (!PublishStrategies.TryGetValue(strategy, out IMediator? mediator))
         {
             throw new ArgumentException($"Unknown strategy: {strategy}");
+        }
+        
+        if (notification is null)
+        {
+            throw new ArgumentNullException(nameof(notification), "Notification cannot be null.");
         }
 
         return mediator.Publish(notification, cancellationToken);
@@ -52,9 +51,9 @@ public class Publisher
 
     private Task ParallelWhenAll(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        var tasks = new List<Task>();
+        List<Task> tasks = new();
 
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             tasks.Add(Task.Run(() => handler.HandlerCallback(notification, cancellationToken)));
         }
@@ -64,9 +63,9 @@ public class Publisher
 
     private Task ParallelWhenAny(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        var tasks = new List<Task>();
+        List<Task> tasks = new();
 
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             tasks.Add(Task.Run(() => handler.HandlerCallback(notification, cancellationToken)));
         }
@@ -76,7 +75,7 @@ public class Publisher
 
     private Task ParallelNoWait(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             Task.Run(() => handler.HandlerCallback(notification, cancellationToken));
         }
@@ -86,10 +85,10 @@ public class Publisher
 
     private async Task AsyncContinueOnException(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        var tasks = new List<Task>();
-        var exceptions = new List<Exception>();
+        List<Task> tasks = new();
+        List<Exception> exceptions = new();
 
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             try
             {
@@ -122,7 +121,7 @@ public class Publisher
 
     private async Task SyncStopOnException(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             await handler.HandlerCallback(notification, cancellationToken).ConfigureAwait(false);
         }
@@ -130,9 +129,9 @@ public class Publisher
 
     private async Task SyncContinueOnException(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
     {
-        var exceptions = new List<Exception>();
+        List<Exception> exceptions = new();
 
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             try
             {

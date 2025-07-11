@@ -1,23 +1,20 @@
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Questy.Examples;
 
-public class GenericPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+/// <summary>
+///   Example of a generic pipeline behavior that writes to a TextWriter.
+/// </summary>
+/// <typeparam name="TRequest"></typeparam>
+/// <typeparam name="TResponse"></typeparam>
+/// <param name="writer"></param>
+public class GenericPipelineBehavior<TRequest, TResponse>(TextWriter writer) 
+    : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
 {
-    private readonly TextWriter _writer;
-
-    public GenericPipelineBehavior(TextWriter writer)
-    {
-        _writer = writer;
-    }
-
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        await _writer.WriteLineAsync("-- Handling Request");
-        var response = await next();
-        await  _writer.WriteLineAsync("-- Finished Request");
+        await writer.WriteLineAsync("-- Handling Request");
+        TResponse? response = await next();
+        await writer.WriteLineAsync("-- Finished Request");
         return response;
     }
 }

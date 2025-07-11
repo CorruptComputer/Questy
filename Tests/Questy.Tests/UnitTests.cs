@@ -11,8 +11,8 @@ public class UnitTests
     [Fact]
     public async Task Should_be_equal_to_each_other()
     {
-        var unit1 = Unit.Value;
-        var unit2 = await Unit.Task;
+        Unit unit1 = Unit.Value;
+        Unit unit2 = await Unit.Task;
 
         Assert.Equal(unit1, unit2);
         Assert.True(unit1 == unit2);
@@ -22,7 +22,7 @@ public class UnitTests
     [Fact]
     public void Should_be_equitable()
     {
-        var dictionary = new Dictionary<Unit, string>
+        Dictionary<Unit, string> dictionary = new()
         {
             {new Unit(), "value"},
         };
@@ -33,15 +33,15 @@ public class UnitTests
     [Fact]
     public void Should_tostring()
     {
-        var unit = Unit.Value;
+        Unit unit = Unit.Value;
         Assert.Equal("()", unit.ToString());
     }
 
     [Fact]
     public void Should_compareto_as_zero()
     {
-        var unit1 = new Unit();
-        var unit2 = new Unit();
+        Unit unit1 = new();
+        Unit unit2 = new();
 
         Assert.Equal(0, unit1.CompareTo(unit2));
     }
@@ -50,7 +50,7 @@ public class UnitTests
     {
         return new[]
         {
-            new object[] {new object(), false},
+            new object[] {new(), false},
             new object[] {"", false},
             new object[] {"()", false},
             new object[] {null!, false},
@@ -69,7 +69,7 @@ public class UnitTests
     [MemberData(nameof(ValueData))]
     public void Should_be_equal(object value, bool isEqual)
     {
-        var unit1 = Unit.Value;
+        Unit unit1 = Unit.Value;
 
         if (isEqual)
             Assert.True(unit1.Equals(value));
@@ -81,7 +81,7 @@ public class UnitTests
     [MemberData(nameof(CompareToValueData))]
     public void Should_compareto_value_as_zero(object value)
     {
-        var unit1 = new Unit();
+        Unit unit1 = new();
 
         Assert.Equal(0, ((IComparable)unit1).CompareTo(value));
     }

@@ -31,8 +31,8 @@ public class NotificationHandlerTests
     [Fact]
     public async Task Should_call_abstract_handle_method()
     {
-        var builder = new StringBuilder();
-        var writer = new StringWriter(builder);
+        StringBuilder builder = new();
+        StringWriter writer = new(builder);
 
         INotificationHandler<Ping> handler = new PongChildHandler(writer);
 
@@ -41,7 +41,7 @@ public class NotificationHandlerTests
             default
         );
 
-        var result = builder.ToString();
+        string result = builder.ToString();
         result.ShouldContain("Ping Pong");
     }
 }

@@ -1,8 +1,5 @@
 ﻿namespace Questy;
 
-using System;
-using System.Threading.Tasks;
-
 /// <summary>
 /// Represents a void type, since <see cref="System.Void"/> is not a valid return type in C#.
 /// </summary>

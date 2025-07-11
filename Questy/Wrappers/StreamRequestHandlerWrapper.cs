@@ -1,13 +1,7 @@
-using System;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 
 namespace Questy.Wrappers;
-
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 internal abstract class StreamRequestHandlerBase
 {
@@ -28,7 +22,7 @@ internal class StreamRequestHandlerWrapperImpl<TRequest, TResponse>
 {
     public override async IAsyncEnumerable<object?> Handle(object request, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var item in Handle((IStreamRequest<TResponse>) request, serviceProvider, cancellationToken))
+        await foreach (TResponse? item in Handle((IStreamRequest<TResponse>) request, serviceProvider, cancellationToken))
         {
             yield return item;
         }
@@ -42,7 +36,7 @@ internal class StreamRequestHandlerWrapperImpl<TRequest, TResponse>
             .GetRequiredService<IStreamRequestHandler<TRequest, TResponse>>()
             .Handle((TRequest) request, cancellationToken);
 
-        var items = serviceProvider
+        IAsyncEnumerable<TResponse> items = serviceProvider
             .GetServices<IStreamPipelineBehavior<TRequest, TResponse>>()
             .Reverse()
             .Aggregate(
@@ -54,7 +48,7 @@ internal class StreamRequestHandlerWrapperImpl<TRequest, TResponse>
                 )
             )();
 
-        await foreach ( var item in items.WithCancellation(cancellationToken) )
+        await foreach (TResponse? item in items.WithCancellation(cancellationToken) )
         {
             yield return item;
         }
@@ -65,10 +59,10 @@ internal class StreamRequestHandlerWrapperImpl<TRequest, TResponse>
         IAsyncEnumerable<T> items,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var cancellable = items
+        ConfiguredCancelableAsyncEnumerable<T> cancellable = items
             .WithCancellation(cancellationToken)
             .ConfigureAwait(false);
-        await foreach (var item in cancellable)
+        await foreach (T? item in cancellable)
         {
             yield return item;
         }

@@ -1,11 +1,9 @@
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Questy.Pipeline;
 
 namespace Questy.Examples;
 
 public class GenericRequestPreProcessor<TRequest> : IRequestPreProcessor<TRequest>
+    where TRequest : IRequest
 {
     private readonly TextWriter _writer;
 

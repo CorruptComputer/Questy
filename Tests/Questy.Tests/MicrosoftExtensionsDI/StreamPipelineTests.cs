@@ -27,7 +27,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<Pong> Handle(StreamPing request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Outer before");
-            await foreach (var response in next().WithCancellation(cancellationToken))
+            await foreach (Pong? response in next().WithCancellation(cancellationToken))
             {
                 yield return response;
             }
@@ -47,7 +47,7 @@ public class StreamPipelineTests
         public async IAsyncEnumerable<Pong> Handle(StreamPing request, StreamHandlerDelegate<Pong> next, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _output.Messages.Add("Inner before");
-            await foreach (var response in next().WithCancellation(cancellationToken))
+            await foreach (Pong? response in next().WithCancellation(cancellationToken))
             {
                 yield return response;
             }
@@ -58,19 +58,19 @@ public class StreamPipelineTests
     [Fact]
     public async Task Should_wrap_with_behavior()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddTransient<IStreamPipelineBehavior<StreamPing, Pong>, OuterBehavior>();
         services.AddTransient<IStreamPipelineBehavior<StreamPing, Pong>, InnerBehavior>();
         services.AddMediator(cfg => cfg.RegisterServicesFromAssembly(typeof(Ping).Assembly));
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var stream = mediator.CreateStream(new StreamPing { Message = "Ping" });
+        IAsyncEnumerable<Pong> stream = mediator.CreateStream(new StreamPing { Message = "Ping" });
 
-        await foreach (var response in stream)
+        await foreach (Pong? response in stream)
         {
             response.Message.ShouldBe("Ping Pang");
         }
@@ -88,7 +88,7 @@ public class StreamPipelineTests
     [Fact]
     public async Task Should_register_and_wrap_with_behavior()
     {
-        var output = new Logger();
+        Logger output = new();
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(output);
         services.AddMediator(cfg =>
@@ -97,13 +97,13 @@ public class StreamPipelineTests
             cfg.AddStreamBehavior<IStreamPipelineBehavior<StreamPing, Pong>, OuterBehavior>();
             cfg.AddStreamBehavior<IStreamPipelineBehavior<StreamPing, Pong>, InnerBehavior>();
         });
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var mediator = provider.GetRequiredService<IMediator>();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
 
-        var stream = mediator.CreateStream(new StreamPing { Message = "Ping" });
+        IAsyncEnumerable<Pong> stream = mediator.CreateStream(new StreamPing { Message = "Ping" });
 
-        await foreach (var response in stream)
+        await foreach (Pong? response in stream)
         {
             response.Message.ShouldBe("Ping Pang");
         }

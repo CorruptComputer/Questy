@@ -25,9 +25,9 @@ namespace Questy.Tests
         [InlineData(50, 3, 3)]
         public void ShouldResolveAllCombinationsOfGenericHandler(int numberOfClasses, int numberOfInterfaces, int numberOfTypeParameters)
         {
-            var services = new ServiceCollection();
+            ServiceCollection services = new();
 
-            var dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
+            AssemblyBuilder dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
 
             services.AddMediator(cfg =>
             {
@@ -35,24 +35,24 @@ namespace Questy.Tests
                 cfg.RegisterGenericHandlers = true;
             });
 
-            var provider = services.BuildServiceProvider();
+            ServiceProvider provider = services.BuildServiceProvider();
 
-            var dynamicRequestType = dynamicAssembly.GetType("DynamicRequest")!;
+            Type dynamicRequestType = dynamicAssembly.GetType("DynamicRequest")!;
 
             int expectedCombinations = CalculateTotalCombinations(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
 
-            var testClasses = Enumerable.Range(1, numberOfClasses)
+            Type[] testClasses = Enumerable.Range(1, numberOfClasses)
                 .Select(i => dynamicAssembly.GetType($"TestClass{i}")!)
                 .ToArray();
 
-            var combinations = GenerateCombinations(testClasses, numberOfInterfaces);          
+            List<Type[]> combinations = GenerateCombinations(testClasses, numberOfInterfaces);          
 
-            foreach (var combination in combinations)
+            foreach (Type[] combination in combinations)
             {
-                var concreteRequestType = dynamicRequestType.MakeGenericType(combination);
-                var requestHandlerInterface = typeof(IRequestHandler<>).MakeGenericType(concreteRequestType);
+                Type concreteRequestType = dynamicRequestType.MakeGenericType(combination);
+                Type requestHandlerInterface = typeof(IRequestHandler<>).MakeGenericType(concreteRequestType);
 
-                var handler = provider.GetService(requestHandlerInterface);
+                object? handler = provider.GetService(requestHandlerInterface);
                 handler.ShouldNotBeNull($"Handler for {concreteRequestType} should not be null");
             }            
         }
@@ -63,13 +63,13 @@ namespace Questy.Tests
         [InlineData(1, 1, 1)]
         [InlineData(50, 3, 3)]
         public void ShouldRegisterTheCorrectAmountOfHandlers(int numberOfClasses, int numberOfInterfaces, int numberOfTypeParameters)
-        {  
-            var dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);          
+        {
+            AssemblyBuilder dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);          
             int expectedCombinations = CalculateTotalCombinations(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
-            var testClasses = Enumerable.Range(1, numberOfClasses)
+            Type[] testClasses = Enumerable.Range(1, numberOfClasses)
                .Select(i => dynamicAssembly.GetType($"TestClass{i}")!)
                .ToArray();
-            var combinations = GenerateCombinations(testClasses, numberOfInterfaces);
+            List<Type[]> combinations = GenerateCombinations(testClasses, numberOfInterfaces);
             combinations.Count.ShouldBe(expectedCombinations, $"Should have tested all {expectedCombinations} combinations");
         }
 
@@ -80,13 +80,13 @@ namespace Questy.Tests
         [InlineData(50, 3, 3)]
         public void ShouldNotRegisterDuplicateHandlers(int numberOfClasses, int numberOfInterfaces, int numberOfTypeParameters)
         {
-            var dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
+            AssemblyBuilder dynamicAssembly = GenerateCombinationsTestAssembly(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
             int expectedCombinations = CalculateTotalCombinations(numberOfClasses, numberOfInterfaces, numberOfTypeParameters);
-            var testClasses = Enumerable.Range(1, numberOfClasses)
+            Type[] testClasses = Enumerable.Range(1, numberOfClasses)
                .Select(i => dynamicAssembly.GetType($"TestClass{i}")!)
                .ToArray();
-            var combinations = GenerateCombinations(testClasses, numberOfInterfaces);
-            var hasDuplicates = combinations
+            List<Type[]> combinations = GenerateCombinations(testClasses, numberOfInterfaces);
+            bool hasDuplicates = combinations
               .Select(x => string.Join(", ", x.Select(y => y.Name)))
               .GroupBy(x => x)
               .Any(g => g.Count() > 1);
@@ -100,7 +100,7 @@ namespace Questy.Tests
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
 
-            var assembly = GenerateTypesClosingExceedsMaximumAssembly();
+            Assembly assembly = GenerateTypesClosingExceedsMaximumAssembly();
 
             Should.Throw<ArgumentException>(() =>
             {
@@ -119,7 +119,7 @@ namespace Questy.Tests
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
 
-            var assembly = GenerateHandlerRegistrationsExceedsMaximumAssembly();
+            Assembly assembly = GenerateHandlerRegistrationsExceedsMaximumAssembly();
 
             Should.Throw<ArgumentException>(() =>
             {
@@ -138,7 +138,7 @@ namespace Questy.Tests
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
 
-            var assembly = GenerateGenericTypeParametersExceedsMaximumAssembly();
+            Assembly assembly = GenerateGenericTypeParametersExceedsMaximumAssembly();
 
             Should.Throw<ArgumentException>(() =>
             {
@@ -157,7 +157,7 @@ namespace Questy.Tests
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
 
-            var assembly = GenerateTimeoutOccursAssembly();
+            Assembly assembly = GenerateTimeoutOccursAssembly();
 
             Should.Throw<TimeoutException>(() =>
             {
@@ -180,7 +180,7 @@ namespace Questy.Tests
             IServiceCollection services = new ServiceCollection();
             services.AddSingleton(new Logger());
 
-            var assembly = GenerateOptOutAssembly();
+            Assembly assembly = GenerateOptOutAssembly();
             services.AddMediator(cfg =>
             {
                 //opt out flag set
@@ -188,17 +188,17 @@ namespace Questy.Tests
                 cfg.RegisterServicesFromAssembly(assembly);
             });
 
-            var provider = services.BuildServiceProvider();
-            var testClasses = Enumerable.Range(1, 2)
+            ServiceProvider provider = services.BuildServiceProvider();
+            Type[] testClasses = Enumerable.Range(1, 2)
                 .Select(i => assembly.GetType($"TestClass{i}")!)
                 .ToArray();
-            var requestType = assembly.GetType("OptOutRequest")!;
-            var combinations = GenerateCombinations(testClasses, 2);
+            Type requestType = assembly.GetType("OptOutRequest")!;
+            List<Type[]> combinations = GenerateCombinations(testClasses, 2);
 
-            var concreteRequestType = requestType.MakeGenericType(combinations.First());
-            var requestHandlerInterface = typeof(IRequestHandler<>).MakeGenericType(concreteRequestType);
+            Type concreteRequestType = requestType.MakeGenericType(combinations.First());
+            Type requestHandlerInterface = typeof(IRequestHandler<>).MakeGenericType(concreteRequestType);
 
-            var handler = provider.GetService(requestHandlerInterface);
+            object? handler = provider.GetService(requestHandlerInterface);
             handler.ShouldBeNull($"Handler for {concreteRequestType} should be null");
 
 

@@ -22,10 +22,10 @@ public class ServiceFactoryTests
     [Fact]
     public async Task Should_throw_given_no_handler()
     {
-        var serviceCollection = new ServiceCollection();
-        var serviceProvider = serviceCollection.BuildServiceProvider();
+        ServiceCollection serviceCollection = new();
+        ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
-        var mediator = new Mediator(serviceProvider);
+        Mediator mediator = new(serviceProvider);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => mediator.Send(new Ping())

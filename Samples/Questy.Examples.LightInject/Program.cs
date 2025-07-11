@@ -13,15 +13,15 @@ class Program
 {
     static Task Main(string[] args)
     {
-        var writer = new WrappingWriter(Console.Out);
-        var mediator = BuildMediator(writer);
+        WrappingWriter writer = new(Console.Out);
+        IMediator mediator = BuildMediator(writer);
 
         return Runner.Run(mediator, writer, "LightInject");
     }
 
     private static IMediator BuildMediator(WrappingWriter writer)
     {
-        var serviceContainer = new ServiceContainer(ContainerOptions.Default.WithMicrosoftSettings());
+        ServiceContainer serviceContainer = new(ContainerOptions.Default.WithMicrosoftSettings());
         serviceContainer.Register<IMediator, Mediator>();            
         serviceContainer.RegisterInstance<TextWriter>(writer);
 
@@ -50,8 +50,8 @@ class Program
                    
         serviceContainer.Register(typeof(IRequestPreProcessor<>), typeof(GenericRequestPreProcessor<>));
 
-        var services = new ServiceCollection();
-        var provider = serviceContainer.CreateServiceProvider(services);
+        ServiceCollection services = new();
+        IServiceProvider provider = serviceContainer.CreateServiceProvider(services);
         return provider.GetRequiredService<IMediator>(); 
     }
 }

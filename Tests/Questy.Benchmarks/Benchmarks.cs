@@ -1,5 +1,3 @@
-using System.IO;
-using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,14 +6,15 @@ namespace Questy.Benchmarks
     [DotTraceDiagnoser]
     public class Benchmarks
     {
-        private IMediator _mediator;
-        private readonly Ping _request = new Ping {Message = "Hello World"};
-        private readonly Pinged _notification = new Pinged();
+        private IMediator? _mediator;
+        
+        private readonly Ping _request = new() { Message = "Hello World" };
+        private readonly Pinged _notification = new();
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var services = new ServiceCollection();
+            ServiceCollection services = new();
 
             services.AddSingleton(TextWriter.Null);
 
@@ -25,7 +24,7 @@ namespace Questy.Benchmarks
                 cfg.AddOpenBehavior(typeof(GenericPipelineBehavior<,>));
             });
 
-            var provider = services.BuildServiceProvider();
+            ServiceProvider provider = services.BuildServiceProvider();
 
             _mediator = provider.GetRequiredService<IMediator>();
         }
@@ -33,12 +32,22 @@ namespace Questy.Benchmarks
         [Benchmark]
         public Task SendingRequests()
         {
+            if (_mediator is null)
+            {
+                throw new InvalidOperationException("Mediator is not initialized.");
+            }
+
             return _mediator.Send(_request);
         }
 
         [Benchmark]
         public Task PublishingNotifications()
         {
+            if (_mediator is null)
+            {
+                throw new InvalidOperationException("Mediator is not initialized.");
+            }
+
             return _mediator.Publish(_notification);
         }
     }

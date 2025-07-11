@@ -56,8 +56,8 @@ public class CustomMediatorTests
         // Call AddMediator again, this should NOT override our custom Questy (With MS DI, last registration wins)
         services.AddMediator(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(CustomMediatorTests)));
 
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
+        ServiceProvider provider = services.BuildServiceProvider();
+        IMediator mediator = provider.GetRequiredService<IMediator>();
         mediator.GetType().ShouldBe(typeof(MyCustomMediator));
     }
 }

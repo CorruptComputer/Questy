@@ -1,28 +1,21 @@
-namespace Questy.Pipeline;
-
-using Internal;
+using Questy.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Threading;
-using System.Threading.Tasks;
+
+namespace Questy.Pipeline;
 
 /// <summary>
-/// Behavior for executing all <see cref="IRequestExceptionHandler{TRequest,TResponse,TException}"/> instances
-///     after an exception is thrown by the following pipeline steps
+///   Behavior for executing all <see cref="IRequestExceptionHandler{TRequest,TResponse,TException}"/> instances
+///   after an exception is thrown by the following pipeline steps
 /// </summary>
 /// <typeparam name="TRequest">Request type</typeparam>
 /// <typeparam name="TResponse">Response type</typeparam>
-public class RequestExceptionProcessorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class RequestExceptionProcessorBehavior<TRequest, TResponse>(IServiceProvider serviceProvider) 
+    : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public RequestExceptionProcessorBehavior(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-
+    /// <inheritdoc />
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         try
@@ -31,22 +24,22 @@ public class RequestExceptionProcessorBehavior<TRequest, TResponse> : IPipelineB
         }
         catch (Exception exception)
         {
-            var state = new RequestExceptionHandlerState<TResponse>();
+            RequestExceptionHandlerState<TResponse> state = new();
 
-            var exceptionTypes = GetExceptionTypes(exception.GetType());
+            IEnumerable<Type> exceptionTypes = GetExceptionTypes(exception.GetType());
 
-            var handlersForException = exceptionTypes
+            List<(MethodInfo MethodInfo, object Handler)> handlersForException = exceptionTypes
                 .SelectMany(exceptionType => GetHandlersForException(exceptionType, request))
                 .GroupBy(static handlerForException => handlerForException.Handler.GetType())
                 .Select(static handlerForException => handlerForException.First())
                 .Select(static handlerForException => (MethodInfo: GetMethodInfoForHandler(handlerForException.ExceptionType), handlerForException.Handler))
                 .ToList();
 
-            foreach (var handlerForException in handlersForException)
+            foreach ((MethodInfo MethodInfo, object Handler) handlerForException in handlersForException)
             {
                 try
                 {
-                    await ((Task) (handlerForException.MethodInfo.Invoke(handlerForException.Handler, new object[] { request, exception, state, cancellationToken })
+                    await ((Task)(handlerForException.MethodInfo.Invoke(handlerForException.Handler, new object[] { request, exception, state, cancellationToken })
                                    ?? throw new InvalidOperationException("Did not return a Task from the exception handler."))).ConfigureAwait(false);
                 }
                 catch (TargetInvocationException invocationException) when (invocationException.InnerException != null)
@@ -85,10 +78,10 @@ public class RequestExceptionProcessorBehavior<TRequest, TResponse> : IPipelineB
 
     private IEnumerable<(Type ExceptionType, object Handler)> GetHandlersForException(Type exceptionType, TRequest request)
     {
-        var exceptionHandlerInterfaceType = typeof(IRequestExceptionHandler<,,>).MakeGenericType(typeof(TRequest), typeof(TResponse), exceptionType);
-        var enumerableExceptionHandlerInterfaceType = typeof(IEnumerable<>).MakeGenericType(exceptionHandlerInterfaceType);
+        Type exceptionHandlerInterfaceType = typeof(IRequestExceptionHandler<,,>).MakeGenericType(typeof(TRequest), typeof(TResponse), exceptionType);
+        Type enumerableExceptionHandlerInterfaceType = typeof(IEnumerable<>).MakeGenericType(exceptionHandlerInterfaceType);
 
-        var exceptionHandlers = (IEnumerable<object>) _serviceProvider.GetRequiredService(enumerableExceptionHandlerInterfaceType);
+        IEnumerable<object> exceptionHandlers = (IEnumerable<object>)serviceProvider.GetRequiredService(enumerableExceptionHandlerInterfaceType);
 
         return HandlersOrderer.Prioritize(exceptionHandlers.ToList(), request)
             .Select(handler => (exceptionType, action: handler));
@@ -96,9 +89,9 @@ public class RequestExceptionProcessorBehavior<TRequest, TResponse> : IPipelineB
 
     private static MethodInfo GetMethodInfoForHandler(Type exceptionType)
     {
-        var exceptionHandlerInterfaceType = typeof(IRequestExceptionHandler<,,>).MakeGenericType(typeof(TRequest), typeof(TResponse), exceptionType);
-        
-        var handleMethodInfo = exceptionHandlerInterfaceType.GetMethod(nameof(IRequestExceptionHandler<TRequest, TResponse, Exception>.Handle))
+        Type exceptionHandlerInterfaceType = typeof(IRequestExceptionHandler<,,>).MakeGenericType(typeof(TRequest), typeof(TResponse), exceptionType);
+
+        MethodInfo handleMethodInfo = exceptionHandlerInterfaceType.GetMethod(nameof(IRequestExceptionHandler<TRequest, TResponse, Exception>.Handle))
                            ?? throw new InvalidOperationException($"Could not find method {nameof(IRequestExceptionHandler<TRequest, TResponse, Exception>.Handle)} on type {exceptionHandlerInterfaceType}");
 
         return handleMethodInfo;

@@ -18,7 +18,7 @@ public class NotificationPublisherTests
 
         public async Task Publish(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken)
         {
-            foreach (var handlerExecutor in handlerExecutors)
+            foreach (NotificationHandlerExecutor handlerExecutor in handlerExecutors)
             {
                 await handlerExecutor.HandlerCallback(notification, cancellationToken);
                 CallCount++;
@@ -29,19 +29,19 @@ public class NotificationPublisherTests
     [Fact]
     public void ShouldResolveDefaultPublisher()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddSingleton(new Logger());
         services.AddMediator(cfg =>
         {
             cfg.RegisterServicesFromAssemblyContaining(typeof(CustomMediatorTests));
         });
 
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetService<IMediator>();
+        ServiceProvider provider = services.BuildServiceProvider();
+        IMediator? mediator = provider.GetService<IMediator>();
 
         mediator.ShouldNotBeNull();
 
-        var publisher = provider.GetService<INotificationPublisher>();
+        INotificationPublisher? publisher = provider.GetService<INotificationPublisher>();
 
         publisher.ShouldNotBeNull();
     }
@@ -49,8 +49,8 @@ public class NotificationPublisherTests
     [Fact]
     public async Task ShouldSubstitutePublisherInstance()
     {
-        var publisher = new MockPublisher();
-        var services = new ServiceCollection();
+        MockPublisher publisher = new();
+        ServiceCollection services = new();
         services.AddSingleton(new Logger());
         services.AddMediator(cfg =>
         {
@@ -58,8 +58,8 @@ public class NotificationPublisherTests
             cfg.NotificationPublisher = publisher;
         });
 
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetService<IMediator>();
+        ServiceProvider provider = services.BuildServiceProvider();
+        IMediator? mediator = provider.GetService<IMediator>();
 
         mediator.ShouldNotBeNull();
 
@@ -71,7 +71,7 @@ public class NotificationPublisherTests
     [Fact]
     public async Task ShouldSubstitutePublisherServiceType()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddSingleton(new Logger());
         services.AddMediator(cfg =>
         {
@@ -80,16 +80,16 @@ public class NotificationPublisherTests
             cfg.Lifetime = ServiceLifetime.Singleton;
         });
 
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetService<IMediator>();
-        var publisher = provider.GetService<INotificationPublisher>();
+        ServiceProvider provider = services.BuildServiceProvider();
+        IMediator? mediator = provider.GetService<IMediator>();
+        INotificationPublisher? publisher = provider.GetService<INotificationPublisher>();
 
         mediator.ShouldNotBeNull();
         publisher.ShouldNotBeNull();
 
         await mediator.Publish(new Pinged());
 
-        var mock = publisher.ShouldBeOfType<MockPublisher>();
+        MockPublisher mock = publisher.ShouldBeOfType<MockPublisher>();
 
         mock.CallCount.ShouldBeGreaterThan(0);
     }
@@ -97,7 +97,7 @@ public class NotificationPublisherTests
     [Fact]
     public async Task ShouldSubstitutePublisherServiceTypeWithWhenAll()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddSingleton(new Logger());
         services.AddMediator(cfg =>
         {
@@ -106,9 +106,9 @@ public class NotificationPublisherTests
             cfg.Lifetime = ServiceLifetime.Singleton;
         });
 
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetService<IMediator>();
-        var publisher = provider.GetService<INotificationPublisher>();
+        ServiceProvider provider = services.BuildServiceProvider();
+        IMediator? mediator = provider.GetService<IMediator>();
+        INotificationPublisher? publisher = provider.GetService<INotificationPublisher>();
 
         mediator.ShouldNotBeNull();
         publisher.ShouldNotBeNull();

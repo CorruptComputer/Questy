@@ -85,9 +85,9 @@ public class TypeResolutionTests
         services.AddSingleton(new Logger());
         services.AddKeyedSingleton<string>("Foo", "Foo");
         services.AddMediator(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Ping)));
-        var serviceProvider = services.BuildServiceProvider();
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
 
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        IMediator mediator = serviceProvider.GetRequiredService<IMediator>();
         
         mediator.ShouldNotBeNull();
     }

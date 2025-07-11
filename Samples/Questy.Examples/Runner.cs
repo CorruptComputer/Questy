@@ -1,12 +1,8 @@
-using System;
-using System.Linq;
+using Questy.Examples.ExceptionHandler;
+using Questy.Examples.Streams;
 using System.Text;
 
 namespace Questy.Examples;
-
-using Questy.Examples.ExceptionHandler;
-using System.IO;
-using System.Threading.Tasks;
 
 public static class Runner
 {
@@ -18,7 +14,7 @@ public static class Runner
         await writer.WriteLineAsync();
 
         await writer.WriteLineAsync("Sending Ping...");
-        var pong = await mediator.Send(new Ping { Message = "Ping" });
+        Pong pong = await mediator.Send(new Ping { Message = "Ping" });
         await writer.WriteLineAsync("Received: " + pong.Message);
         await writer.WriteLineAsync();
 
@@ -27,7 +23,7 @@ public static class Runner
         await writer.WriteLineAsync();
 
         await writer.WriteLineAsync("Publishing Ponged...");
-        var failedPong = false;
+        bool failedPong = false;
         try
         {
             await mediator.Publish(new Ponged());
@@ -39,7 +35,7 @@ public static class Runner
         }
         await writer.WriteLineAsync();
 
-        var failedJing = false;
+        bool failedJing = false;
         await writer.WriteLineAsync("Sending Jing...");
         try
         {
@@ -104,15 +100,15 @@ public static class Runner
             await writer.WriteLineAsync();
         }
 
-        var isHandlerForSameExceptionWorks = await IsHandlerForSameExceptionWorks(mediator, writer).ConfigureAwait(false);
-        var isHandlerForBaseExceptionWorks = await IsHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
-        var isHandlerForLessSpecificExceptionWorks = await IsHandlerForLessSpecificExceptionWorks(mediator, writer).ConfigureAwait(false);
-        var isPreferredHandlerForBaseExceptionWorks = await IsPreferredHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
-        var isOverriddenHandlerForBaseExceptionWorks = await IsOverriddenHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
+        bool isHandlerForSameExceptionWorks = await IsHandlerForSameExceptionWorks(mediator, writer).ConfigureAwait(false);
+        bool isHandlerForBaseExceptionWorks = await IsHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
+        bool isHandlerForLessSpecificExceptionWorks = await IsHandlerForLessSpecificExceptionWorks(mediator, writer).ConfigureAwait(false);
+        bool isPreferredHandlerForBaseExceptionWorks = await IsPreferredHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
+        bool isOverriddenHandlerForBaseExceptionWorks = await IsOverriddenHandlerForBaseExceptionWorks(mediator, writer).ConfigureAwait(false);
 
         await writer.WriteLineAsync("---------------");
-        var contents = writer.Contents;
-        var order = new[] {
+        string contents = writer.Contents;
+        int[] order = new[] {
             contents.IndexOf("- Starting Up", StringComparison.OrdinalIgnoreCase),
             contents.IndexOf("-- Handling Request", StringComparison.OrdinalIgnoreCase),
             contents.IndexOf("--- Handled Ping", StringComparison.OrdinalIgnoreCase),
@@ -121,13 +117,13 @@ public static class Runner
             contents.IndexOf("- All Done with Ping", StringComparison.OrdinalIgnoreCase),
         };
 
-        var streamOrder = new[] {
+        int[] streamOrder = new[] {
             contents.IndexOf("-- Handling StreamRequest", StringComparison.OrdinalIgnoreCase),
             contents.IndexOf("--- Handled Sing: Sing, Song", StringComparison.OrdinalIgnoreCase),
             contents.IndexOf("-- Finished StreamRequest", StringComparison.OrdinalIgnoreCase),
         };
 
-        var results = new RunResults
+        RunResults results = new()
         {
             RequestHandlers = contents.Contains("--- Handled Ping:"),
             VoidRequestsHandlers = contents.Contains("--- Handled Jing:"),
@@ -181,7 +177,7 @@ public static class Runner
 
     private static async Task<bool> IsHandlerForSameExceptionWorks(IMediator mediator, WrappingWriter writer)
     {
-        var isHandledCorrectly = false;
+        bool isHandledCorrectly = false;
 
         await writer.WriteLineAsync("Checking handler to catch exact exception...");
         try
@@ -200,7 +196,7 @@ public static class Runner
 
     private static async Task<bool> IsHandlerForBaseExceptionWorks(IMediator mediator, WrappingWriter writer)
     {
-        var isHandledCorrectly = false;
+        bool isHandledCorrectly = false;
 
         await writer.WriteLineAsync("Checking shared handler to catch exception by base type...");
         try
@@ -219,7 +215,7 @@ public static class Runner
         
     private static async Task<bool> IsHandlerForLessSpecificExceptionWorks(IMediator mediator, WrappingWriter writer)
     {
-        var isHandledCorrectly = false;
+        bool isHandledCorrectly = false;
 
         await writer.WriteLineAsync("Checking base handler to catch any exception...");
         try
@@ -238,7 +234,7 @@ public static class Runner
 
     private static async Task<bool> IsPreferredHandlerForBaseExceptionWorks(IMediator mediator, WrappingWriter writer)
     {
-        var isHandledCorrectly = false;
+        bool isHandledCorrectly = false;
 
         await writer.WriteLineAsync("Selecting preferred handler to handle exception...");
 
@@ -258,7 +254,7 @@ public static class Runner
 
     private static async Task<bool> IsOverriddenHandlerForBaseExceptionWorks(IMediator mediator, WrappingWriter writer)
     {
-        var isHandledCorrectly = false;
+        bool isHandledCorrectly = false;
 
         await writer.WriteLineAsync("Selecting new handler to handle exception...");
 
@@ -279,14 +275,20 @@ public static class Runner
     private static bool IsExceptionHandledBy<TException, THandler>(WrappingWriter writer)
         where TException : Exception
     {
-        var messages = writer.Contents.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+        List<string> messages = writer.Contents.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
         if (messages.Count - 3 < 0)
             return false;
 
+        string? fullName = typeof(THandler).FullName;
+        if (fullName is null)
+        {
+            return false;
+        }
+
         // Note: For this handler type to be found in messages, it must be written in messages by LogExceptionAction
-        return messages[messages.Count - 2].Contains(typeof(THandler).FullName)
+        return messages[^2].Contains(fullName)
             // Note: For this exception type to be found in messages, exception must be written in all tested exception handlers
-               && messages[messages.Count - 3].Contains(typeof(TException).FullName);
+            && messages[^3].Contains(fullName);
     }
 }
 
@@ -318,7 +320,7 @@ public class RunResults
 public class WrappingWriter : TextWriter
 {
     private readonly TextWriter _innerWriter;
-    private readonly StringBuilder _stringWriter = new StringBuilder();
+    private readonly StringBuilder _stringWriter = new();
 
     public WrappingWriter(TextWriter innerWriter)
     {
@@ -331,7 +333,7 @@ public class WrappingWriter : TextWriter
         _innerWriter.Write(value);
     }
 
-    public override Task WriteLineAsync(string value)
+    public override Task WriteLineAsync(string? value)
     {
         _stringWriter.AppendLine(value);
         return _innerWriter.WriteLineAsync(value);

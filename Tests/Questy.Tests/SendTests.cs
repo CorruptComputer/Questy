@@ -18,7 +18,7 @@ public class SendTests
     public SendTests()
     {
         _dependency = new Dependency();
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddMediator(cfg =>
         {
             cfg.RegisterServicesFromAssemblies(typeof(Ping).Assembly);
@@ -166,7 +166,7 @@ public class SendTests
     {
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            using (var cts = new CancellationTokenSource(500))
+            using (CancellationTokenSource cts = new(500))
             {
                 return await next(cts.Token);
             }
@@ -213,7 +213,7 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_main_handler()
     {
-        var response = await _mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await _mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
     }
@@ -230,9 +230,9 @@ public class SendTests
     public async Task Should_resolve_main_handler_via_dynamic_dispatch()
     {
         object request = new Ping { Message = "Ping" };
-        var response = await _mediator.Send(request);
+        object? response = await _mediator.Send(request);
 
-        var pong = response.ShouldBeOfType<Pong>();
+        Pong pong = response.ShouldBeOfType<Pong>();
         pong.Message.ShouldBe("Ping Pong");
     }
 
@@ -240,7 +240,7 @@ public class SendTests
     public async Task Should_resolve_main_void_handler_via_dynamic_dispatch()
     {
         object request = new VoidPing();
-        var response = await _mediator.Send(request);
+        object? response = await _mediator.Send(request);
 
         response.ShouldBeOfType<Unit>();
 
@@ -250,7 +250,7 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_main_handler_by_specific_interface()
     {
-        var response = await _mediator.Send(new Ping { Message = "Ping" });
+        Pong response = await _mediator.Send(new Ping { Message = "Ping" });
 
         response.Message.ShouldBe("Ping Pong");
     }
@@ -259,7 +259,7 @@ public class SendTests
     public async Task Should_resolve_main_handler_by_given_interface()
     {
         // wrap requests in an array, so this test won't break on a 'replace with var' refactoring
-        var requests = new IRequest[] { new VoidPing() };
+        IRequest[] requests = new IRequest[] { new VoidPing() };
         await _mediator.Send(requests[0]);
 
         _dependency.Called.ShouldBeTrue();
@@ -271,10 +271,10 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_generic_handler()
     {
-        var request = new GenericPing<Pong> { Pong = new Pong { Message = "Ping" } };
-        var result = await _mediator.Send(request);
+        GenericPing<Pong> request = new() { Pong = new Pong { Message = "Ping" } };
+        Pong result = await _mediator.Send(request);
 
-        var pong = result.ShouldBeOfType<Pong>();
+        Pong pong = result.ShouldBeOfType<Pong>();
         pong.Message.ShouldBe("Ping Pong");
 
         _dependency.Called.ShouldBeTrue();
@@ -283,7 +283,7 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_generic_void_handler()
     {
-        var request = new VoidGenericPing<Pong>();
+        VoidGenericPing<Pong> request = new();
         await _mediator.Send(request);
 
         _dependency.Called.ShouldBeTrue();
@@ -292,7 +292,7 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_multiple_type_parameter_generic_handler()
     {
-        var request = new MultipleGenericTypeParameterRequest<TestClass1, TestClass2, TestClass3>();
+        MultipleGenericTypeParameterRequest<TestClass1, TestClass2, TestClass3> request = new();
         await _mediator.Send(request);
 
         _dependency.Called.ShouldBeTrue();
@@ -301,8 +301,8 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_closed_handler_if_defined()
     {
-        var dependency = new Dependency();
-        var services = new ServiceCollection();
+        Dependency dependency = new();
+        ServiceCollection services = new();
         services.AddSingleton(dependency);
         services.AddMediator(cfg =>
         {
@@ -311,10 +311,10 @@ public class SendTests
         });
 
         services.AddTransient<IRequestHandler<VoidGenericPing<PongExtension>>,TestClass1PingRequestHandler>();
-        var serviceProvider = services.BuildServiceProvider();
-        var mediator = serviceProvider.GetService<IMediator>()!;
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
+        IMediator mediator = serviceProvider.GetService<IMediator>()!;
 
-        var request = new VoidGenericPing<PongExtension>();
+        VoidGenericPing<PongExtension> request = new();
         await mediator.Send(request);
 
         dependency.Called.ShouldBeFalse();
@@ -324,8 +324,8 @@ public class SendTests
     [Fact]
     public async Task Should_resolve_open_handler_if_not_defined()
     {
-        var dependency = new Dependency();
-        var services = new ServiceCollection();
+        Dependency dependency = new();
+        ServiceCollection services = new();
         services.AddSingleton(dependency);
         services.AddMediator(cfg => 
         {
@@ -333,10 +333,10 @@ public class SendTests
             cfg.RegisterGenericHandlers = true;
         });
         services.AddTransient<IRequestHandler<VoidGenericPing<PongExtension>>, TestClass1PingRequestHandler>();
-        var serviceProvider = services.BuildServiceProvider();
-        var mediator = serviceProvider.GetService<IMediator>()!;
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
+        IMediator mediator = serviceProvider.GetService<IMediator>()!;
 
-        var request = new VoidGenericPing<Pong>();
+        VoidGenericPing<Pong> request = new();
         await mediator.Send(request);
 
         dependency.Called.ShouldBeTrue();
@@ -346,9 +346,9 @@ public class SendTests
     [Fact]
     public async Task TimeoutBehavior_Void_Should_Cancel_Long_Running_Task_And_Throw_Exception()
     {
-        var request = new TimeoutRequest();
+        TimeoutRequest request = new();
 
-        var exception = await Should.ThrowAsync<TaskCanceledException>(() => _mediator.Send(request));
+        TaskCanceledException exception = await Should.ThrowAsync<TaskCanceledException>(() => _mediator.Send(request));
 
         exception.ShouldNotBeNull();
         exception.ShouldBeAssignableTo<TaskCanceledException>();
@@ -358,10 +358,10 @@ public class SendTests
     [Fact]
     public async Task TimeoutBehavior_NonVoid_Should_Cancel_Long_Running_Task_And_Throw_Exception()
     {
-        var request = new TimeoutRequest2();
+        TimeoutRequest2 request = new();
         int result = 0;
 
-        var exception = await Should.ThrowAsync<TaskCanceledException>(async () => { result = await _mediator.Send(request); });
+        TaskCanceledException exception = await Should.ThrowAsync<TaskCanceledException>(async () => { result = await _mediator.Send(request); });
 
         exception.ShouldNotBeNull();
         exception.ShouldBeAssignableTo<TaskCanceledException>();

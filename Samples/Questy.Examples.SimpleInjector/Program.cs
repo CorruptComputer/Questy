@@ -15,22 +15,22 @@ internal static class Program
 {
     private static Task Main(string[] args)
     {
-        var writer = new WrappingWriter(Console.Out);
-        var mediator = BuildMediator(writer);
+        WrappingWriter writer = new(Console.Out);
+        IMediator mediator = BuildMediator(writer);
 
         return Runner.Run(mediator, writer, "SimpleInjector", true);
     }
 
     private static IMediator BuildMediator(WrappingWriter writer)
     {
-        var container = new Container();
+        Container container = new();
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services
             .AddSimpleInjector(container);
 
-        var assemblies = GetAssemblies().ToArray();
+        Assembly[] assemblies = GetAssemblies().ToArray();
         container.RegisterSingleton<IMediator, Mediator>();
         container.Register(typeof(IRequestHandler<,>), assemblies);
 
@@ -57,11 +57,11 @@ internal static class Program
             typeof(GenericStreamPipelineBehavior<,>)
         });
 
-        var serviceProvider = services.BuildServiceProvider().UseSimpleInjector(container);
+        IServiceProvider serviceProvider = services.BuildServiceProvider().UseSimpleInjector(container);
 
         container.RegisterInstance<IServiceProvider>(container);
 
-        var mediator = container.GetRequiredService<IMediator>();
+        IMediator mediator = container.GetRequiredService<IMediator>();
 
         return mediator;
     }
@@ -69,7 +69,7 @@ internal static class Program
     private static void RegisterHandlers(Container container, Type collectionType, Assembly[] assemblies)
     {
         // we have to do this because by default, generic type definitions (such as the Constrained Notification Handler) won't be registered
-        var handlerTypes = container.GetTypesToRegister(collectionType, assemblies, new TypesToRegisterOptions
+        IEnumerable<Type> handlerTypes = container.GetTypesToRegister(collectionType, assemblies, new TypesToRegisterOptions
         {
             IncludeGenericTypeDefinitions = true,
             IncludeComposites = false,

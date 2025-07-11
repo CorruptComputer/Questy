@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using DryIoc;
 using DryIoc.Microsoft.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,15 +8,15 @@ class Program
 {
     static Task Main()
     {
-        var writer = new WrappingWriter(Console.Out);
-        var mediator = BuildMediator(writer);
+        WrappingWriter writer = new(Console.Out);
+        IMediator mediator = BuildMediator(writer);
 
         return Runner.Run(mediator, writer, "DryIoc");
     }
 
     private static IMediator BuildMediator(WrappingWriter writer)
     {
-        var container = new Container();
+        Container container = new();
         // Since Mediator has multiple constructors, consider adding rule to allow that
         // var container = new Container(rules => rules.With(FactoryMethod.ConstructorWithResolvableArguments))
 
@@ -27,14 +24,14 @@ class Program
 
         //Pipeline works out of the box here
 
-        container.RegisterMany(new[] { typeof(IMediator).GetAssembly(), typeof(Ping).GetAssembly() }, Registrator.Interfaces);
+        container.RegisterMany([typeof(IMediator).GetAssembly(), typeof(Ping).GetAssembly()], Registrator.Interfaces);
         //Without the container having FactoryMethod.ConstructorWithResolvableArguments commented above
         //You must select the desired constructor
         container.Register<IMediator, Mediator>(made: Made.Of(() => new Mediator(Arg.Of<IServiceProvider>())));
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
-        var adapterContainer = container.WithDependencyInjectionAdapter(services);
+        IContainer adapterContainer = container.WithDependencyInjectionAdapter(services);
 
         return adapterContainer.GetRequiredService<IMediator>();
     }
