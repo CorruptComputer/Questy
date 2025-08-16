@@ -12,7 +12,7 @@
     <Deterministic>true</Deterministic>
 
     <!-- Assembly/NuGet info -->
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <Authors>Nickolas Gupton and MediatR contributors up to commit 3f5c3eca8db07e3791f638243bbb879ef847c09e</Authors>
     <RepositoryUrl>https://github.com/CorruptComputer/Questy</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
