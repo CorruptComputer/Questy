@@ -18,7 +18,7 @@
   <ItemGroup>
     <PackageReference Include="LightInject" Version="7.0.1" />
     <PackageReference Include="LightInject.Microsoft.DependencyInjection" Version="4.0.3" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
