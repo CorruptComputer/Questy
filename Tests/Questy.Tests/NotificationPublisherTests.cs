@@ -26,7 +26,12 @@ public class NotificationPublisherTests
     }
     public class SecondHandler : INotificationHandler<Notification>
     {
-        public async Task Handle(Notification notification, CancellationToken cancellationToken) 
+        public async Task Handle(Notification notification, CancellationToken cancellationToken)
+            => await Task.Delay(250, cancellationToken);
+    }
+    public class ThirdHandler : INotificationHandler<Notification>
+    {
+        public async Task Handle(Notification notification, CancellationToken cancellationToken)
             => await Task.Delay(250, cancellationToken);
     }
 

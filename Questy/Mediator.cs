@@ -154,7 +154,7 @@ public class Mediator(IServiceProvider serviceProvider, INotificationPublisher p
         {
             null => throw new ArgumentNullException(nameof(notification)),
             INotification instance => PublishNotification(instance, cancellationToken),
-            _ => throw new ArgumentException($"{nameof(notification)} does not implement ${nameof(INotification)}")
+            _ => throw new ArgumentException($"'{notification.GetType().Name}' does not implement '{nameof(INotification)}'")
         };
 
     /// <summary>
@@ -202,9 +202,7 @@ public class Mediator(IServiceProvider serviceProvider, INotificationPublisher p
             return (StreamRequestHandlerBase)wrapper;
         });
 
-        IAsyncEnumerable<TResponse> items = streamHandler.Handle(request, serviceProvider, cancellationToken);
-
-        return items;
+        return streamHandler.Handle(request, serviceProvider, cancellationToken);
     }
 
     /// <summary>

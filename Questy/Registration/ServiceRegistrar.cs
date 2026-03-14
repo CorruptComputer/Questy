@@ -11,23 +11,6 @@ namespace Questy.Registration;
 /// </summary>
 public static class ServiceRegistrar
 {
-    private static int MaxGenericTypeParameters;
-    private static int MaxTypesClosing;
-    private static int MaxGenericTypeRegistrations;
-    private static int RegistrationTimeout;
-
-    /// <summary>
-    ///   Sets the limitations for generic request handler registrations.
-    /// </summary>
-    /// <param name="configuration"></param>
-    public static void SetGenericRequestHandlerRegistrationLimitations(MediatorServiceConfiguration configuration)
-    {
-        MaxGenericTypeParameters = configuration.MaxGenericTypeParameters;
-        MaxTypesClosing = configuration.MaxTypesClosing;
-        MaxGenericTypeRegistrations = configuration.MaxGenericTypeRegistrations;
-        RegistrationTimeout = configuration.RegistrationTimeout;
-    }
-
     /// <summary>
     ///   Registers the necessary services for Questy, including request handlers, notification handlers,
     ///   behaviors, and other related services.
@@ -37,16 +20,14 @@ public static class ServiceRegistrar
     /// <exception cref="TimeoutException"></exception>
     public static void AddMediatorClassesWithTimeout(IServiceCollection services, MediatorServiceConfiguration configuration)
     {
-        using (CancellationTokenSource cts = new(RegistrationTimeout))
+        using CancellationTokenSource cts = new(configuration.RegistrationTimeout);
+        try
         {
-            try
-            {
-                AddMediatorClasses(services, configuration, cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                throw new TimeoutException("The generic handler registration process timed out.");
-            }
+            AddMediatorClasses(services, configuration, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw new TimeoutException("The generic handler registration process timed out.");
         }
     }
 
@@ -181,7 +162,7 @@ public static class ServiceRegistrar
         foreach (Type @interface in genericInterfaces)
         {
             List<Type> exactMatches = genericConcretions.Where(x => x.CanBeCastTo(@interface)).ToList();
-            AddAllConcretionsThatClose(@interface, exactMatches, services, assembliesToScan, cancellationToken);
+            AddAllConcretionsThatClose(@interface, exactMatches, services, assembliesToScan, configuration, cancellationToken);
         }
     }
 
@@ -240,9 +221,9 @@ public static class ServiceRegistrar
         return (serviceType, openRequestHandlerImplementation.MakeGenericType(closingTypes));
     }
 
-    private static List<Type>? GetConcreteRequestTypes(Type openRequestHandlerInterface, Type openRequestHandlerImplementation, IEnumerable<Assembly> assembliesToScan, CancellationToken cancellationToken)
+    private static List<Type>? GetConcreteRequestTypes(Type openRequestHandlerInterface, Type openRequestHandlerImplementation, IEnumerable<Assembly> assembliesToScan, MediatorServiceConfiguration configuration, CancellationToken cancellationToken)
     {
-        //request generic type constraints       
+        //request generic type constraints
         List<Type[]> constraintsForEachParameter = openRequestHandlerImplementation
             .GetGenericArguments()
             .Select(x => x.GetGenericParameterConstraints())
@@ -261,7 +242,7 @@ public static class ServiceRegistrar
 
         Type requestGenericTypeDefinition = requestType.GetGenericTypeDefinition();
 
-        List<List<Type>> combinations = GenerateCombinations(requestType, typesThatCanCloseForEachParameter, 0, cancellationToken);
+        List<List<Type>> combinations = GenerateCombinations(requestType, typesThatCanCloseForEachParameter, configuration.MaxGenericTypeParameters, configuration.MaxTypesClosing, configuration.MaxGenericTypeRegistrations, 0, cancellationToken);
 
         return combinations.Select(types => requestGenericTypeDefinition.MakeGenericType(types.ToArray())).ToList();
     }
@@ -276,17 +257,20 @@ public static class ServiceRegistrar
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public static List<List<Type>> GenerateCombinations(Type requestType, List<List<Type>> lists, int depth = 0, CancellationToken cancellationToken = default)
+        => GenerateCombinations(requestType, lists, 0, 0, 0, depth, cancellationToken);
+
+    private static List<List<Type>> GenerateCombinations(Type requestType, List<List<Type>> lists, int maxGenericTypeParameters, int maxTypesClosing, int maxGenericTypeRegistrations, int depth, CancellationToken cancellationToken)
     {
         if (depth == 0)
         {
             // Initial checks
-            if (MaxGenericTypeParameters > 0 && lists.Count > MaxGenericTypeParameters)
-                throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. The number of generic type parameters exceeds the maximum allowed ({MaxGenericTypeParameters}).");
+            if (maxGenericTypeParameters > 0 && lists.Count > maxGenericTypeParameters)
+                throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. The number of generic type parameters exceeds the maximum allowed ({maxGenericTypeParameters}).");
 
             foreach (List<Type> list in lists)
             {
-                if (MaxTypesClosing > 0 && list.Count > MaxTypesClosing)
-                    throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. One of the generic type parameter's count of types that can close exceeds the maximum length allowed ({MaxTypesClosing}).");
+                if (maxTypesClosing > 0 && list.Count > maxTypesClosing)
+                    throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. One of the generic type parameter's count of types that can close exceeds the maximum length allowed ({maxTypesClosing}).");
             }
 
             // Calculate the total number of combinations
@@ -294,8 +278,8 @@ public static class ServiceRegistrar
             foreach (List<Type> list in lists)
             {
                 totalCombinations *= list.Count;
-                if (MaxGenericTypeParameters > 0 && totalCombinations > MaxGenericTypeRegistrations)
-                    throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. The total number of generic type registrations exceeds the maximum allowed ({MaxGenericTypeRegistrations}).");
+                if (maxGenericTypeParameters > 0 && totalCombinations > maxGenericTypeRegistrations)
+                    throw new ArgumentException($"Error registering the generic type: {requestType.FullName}. The total number of generic type registrations exceeds the maximum allowed ({maxGenericTypeRegistrations}).");
             }
         }
 
@@ -305,7 +289,7 @@ public static class ServiceRegistrar
         cancellationToken.ThrowIfCancellationRequested();
 
         List<Type> currentList = lists[depth];
-        List<List<Type>> childCombinations = GenerateCombinations(requestType, lists, depth + 1, cancellationToken);
+        List<List<Type>> childCombinations = GenerateCombinations(requestType, lists, maxGenericTypeParameters, maxTypesClosing, maxGenericTypeRegistrations, depth + 1, cancellationToken);
         List<List<Type>> combinations = new();
 
         foreach (Type item in currentList)
@@ -321,11 +305,11 @@ public static class ServiceRegistrar
         return combinations;
     }
 
-    private static void AddAllConcretionsThatClose(Type openRequestInterface, List<Type> concretions, IServiceCollection services, IEnumerable<Assembly> assembliesToScan, CancellationToken cancellationToken)
+    private static void AddAllConcretionsThatClose(Type openRequestInterface, List<Type> concretions, IServiceCollection services, IEnumerable<Assembly> assembliesToScan, MediatorServiceConfiguration configuration, CancellationToken cancellationToken)
     {
         foreach (Type concretion in concretions)
         {
-            List<Type>? concreteRequests = GetConcreteRequestTypes(openRequestInterface, concretion, assembliesToScan, cancellationToken);
+            List<Type>? concreteRequests = GetConcreteRequestTypes(openRequestInterface, concretion, assembliesToScan, configuration, cancellationToken);
 
             if (concreteRequests is null)
                 continue;
