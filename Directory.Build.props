@@ -1,0 +1,30 @@
+<Project>
+    <PropertyGroup>
+        <!-- Build info -->
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+        <Deterministic>true</Deterministic>
+
+        <!-- Assembly info -->
+        <Version>0.0.8</Version>
+        <Authors>Nickolas Gupton and MediatR contributors up to commit 3f5c3eca8db07e3791f638243bbb879ef847c09e</Authors>
+        <RepositoryUrl>https://github.com/CorruptComputer/Questy</RepositoryUrl>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+        <SourceControlInformationFeatureSupported>true</SourceControlInformationFeatureSupported>
+        <SourceRevisionId>main</SourceRevisionId>
+        <Features>strict</Features>
+    </PropertyGroup>
+
+  <!-- If building in release mode, replace the SourceRevisionId with the 8 character git commit hash -->
+    <Target Condition="$(Configuration) == 'Release'" Name="SetSourceRevisionId" BeforeTargets="InitializeSourceControlInformation">
+        <Exec Command="git describe --long --always --dirty --exclude=* --abbrev=8" ConsoleToMSBuild="True" IgnoreExitCode="False">
+            <Output PropertyName="SourceRevisionId" TaskParameter="ConsoleOutput" />
+        </Exec>
+    </Target>
+</Project>
